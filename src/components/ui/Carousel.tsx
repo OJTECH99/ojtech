@@ -1,37 +1,20 @@
-import React, { Component } from 'react';
-import useEmblaCarousel, {
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { cn } from '../../lib/utils';
-import { Button } from '../../components/ui/button';
+import { ReactNode } from 'react';
 
-interface CarouselState {
-  // TODO: Add state properties
+interface CarouselProps {
+  children?: ReactNode;
 }
 
-class Carousel extends Component<any, CarouselState> {
-  constructor(props: any) {
-    super(props);
-    this.state = {
-      // TODO: Initialize state from useState hooks
-    };
-  }
-
-  componentDidMount() {
-    // TODO: Move useEffect with empty dependency array here
-  }
-
-  componentDidUpdate(prevProps: any, prevState: CarouselState) {
-    // TODO: Move useEffect with dependencies here
-  }
-
-  componentWillUnmount() {
-    // TODO: Move cleanup functions from useEffect here
-  }
-
-  render() {
-    return () => {
-        api?.off('select', onSelect);
-  }
-}
+const Carousel: React.FC<CarouselProps> = ({ children }) => {
+  // TODO: Implement carousel with embla-carousel
+  return (
+    <div className="relative">
+      <div className="overflow-hidden">
+        <div className="flex">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default Carousel;

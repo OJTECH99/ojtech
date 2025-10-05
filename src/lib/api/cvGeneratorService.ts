@@ -1,6 +1,5 @@
 import axios from 'axios';
 import html2pdf from 'html2pdf.js';
-import { CV_TEMPLATE } from '../templates/cvTemplate';
 import authService from './authService';
 import { API_BASE_URL } from '../../apiConfig';
 

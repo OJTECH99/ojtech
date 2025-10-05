@@ -1,5 +1,5 @@
 import React, { Component, FormEvent } from 'react';
-import { Button } from '../ui/Button';
+import { Button } from '../ui/button';
 import { AuthContext } from '../../providers/AuthProvider';
 
 interface LoginFormState {
@@ -11,7 +11,7 @@ interface LoginFormState {
 
 export class LoginForm extends Component<{}, LoginFormState> {
   static contextType = AuthContext;
-  context!: React.ContextType<typeof AuthContext>;
+  declare context: React.ContextType<typeof AuthContext>;
 
   constructor(props: {}) {
     super(props);
@@ -36,7 +36,7 @@ export class LoginForm extends Component<{}, LoginFormState> {
     this.setState({ isLoading: true, error: null });
     
     try {
-      const { error } = await this.context.signIn(email, password);
+      const { error } = await this.context!.signIn(email, password);
       
       if (error) {
         this.setState({ 

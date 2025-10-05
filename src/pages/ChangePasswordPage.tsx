@@ -4,7 +4,7 @@ import { AuthContext } from '../providers/AuthProvider';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
-import { Button } from '../components/ui/Button';
+import { Button } from '../components/ui/button';
 import { Loader2, Eye, EyeOff, AlertCircle, Lock } from 'lucide-react';
 import authService from '../lib/api/authService';
 import { toast } from '../components/ui/toast-utils';

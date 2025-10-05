@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '../ui/badge';
-import { Button } from '../ui/Button';
-import { Card, CardContent, CardFooter, CardHeader } from '../ui/Card';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
 import { Checkbox } from '../ui/Checkbox';
 import { 
   Eye, 

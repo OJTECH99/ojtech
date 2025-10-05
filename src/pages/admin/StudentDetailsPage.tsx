@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import Separator from "../../components/ui/Separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/Tabs";

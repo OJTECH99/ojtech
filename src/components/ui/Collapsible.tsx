@@ -1,5 +1,4 @@
-import React, { Component } from 'react';
-import * as CollapsiblePrimitive from '@radix-ui/react-collapsible';
+import { Component } from 'react';
 
 class Collapsible extends Component<any, any> {
   render() {

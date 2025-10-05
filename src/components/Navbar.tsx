@@ -1,6 +1,6 @@
-import React, { Component } from 'react';
+import React, { Component, createRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from './ui/Button';
+import { Button } from './ui/button';
 import { AuthContext } from '../providers/AuthProvider';
 import { useTheme } from 'next-themes';
 import { Menu, X } from 'lucide-react';
@@ -14,8 +14,8 @@ interface NavbarState {
 class NavbarClass extends Component<{ setTheme: (theme: string) => void; theme?: string }, NavbarState> {
   static contextType = AuthContext;
   declare context: React.ContextType<typeof AuthContext>;
-  private dropdownRef = React.createRef<HTMLDivElement>();
-  private mobileMenuRef = React.createRef<HTMLDivElement>();
+  private dropdownRef = createRef<HTMLDivElement>();
+  private mobileMenuRef = createRef<HTMLDivElement>();
 
   constructor(props: { setTheme: (theme: string) => void; theme?: string }) {
     super(props);

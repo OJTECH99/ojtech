@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { Button } from "../ui/Button";
 import { toast } from "../ui/toast-utils";
 import { Loader2, RefreshCw, Check } from "lucide-react";
@@ -12,7 +12,7 @@ interface JobMatchingButtonState {
   upToDate: boolean;
 }
 
-export class JobMatchingButton extends Component<JobMatchingButtonProps, JobMatchingButtonState> {
+export class JobMatchingButton extends React.Component<JobMatchingButtonProps, JobMatchingButtonState> {
   constructor(props: JobMatchingButtonProps) {
     super(props);
     this.state = {
@@ -51,7 +51,7 @@ export class JobMatchingButton extends Component<JobMatchingButtonProps, JobMatc
         if (data.data?.upToDate) {
           this.setState({ upToDate: true });
           
-          toast({
+          toast.toast({
             title: "Already up-to-date",
             description: "Your job matches are already up-to-date with your current resume.",
           });
@@ -62,7 +62,7 @@ export class JobMatchingButton extends Component<JobMatchingButtonProps, JobMatc
           (data.data?.matchesCreated || 0) + 
           (data.data?.matchesUpdated || 0);
           
-        toast({
+        toast.toast({
           title: "Job matching complete",
           description: `Found ${totalMatches} potential job matches.`,
         });
@@ -71,7 +71,7 @@ export class JobMatchingButton extends Component<JobMatchingButtonProps, JobMatc
       }
     } catch (error) {
       console.error("Error matching jobs:", error);
-      toast({
+      toast.toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to match jobs",
         variant: "destructive",

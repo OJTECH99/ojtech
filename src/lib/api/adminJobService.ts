@@ -6,13 +6,10 @@ import {
   AdminJobListResponse,
   AdminJobDetailsResponse,
   AdminJobFormData,
-  BulkOperationRequest,
   BulkOperationResult,
   JobModeration,
   JobCategory,
   ModerationFormData,
-  JobPerformanceMetrics,
-  JobAuditTrail
 } from '../types/adminJob';
 import { normalizedApiBaseUrl } from '../../apiConfig';
 

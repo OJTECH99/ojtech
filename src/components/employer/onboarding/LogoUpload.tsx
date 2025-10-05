@@ -82,21 +82,11 @@ export class LogoUpload extends Component<LogoUploadProps, LogoUploadState> {
           {logoUrl ? (
             <Card className="relative w-48 h-48 overflow-hidden">
               <CardContent className="p-0">
-                {logoUrl.endsWith('.svg') ? (
-                  <img
-                    src={logoUrl}
-                    alt="Company Logo"
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <Image 
-                    src={logoUrl}
-                    alt="Company Logo"
-                    width={192}
-                    height={192}
-                    className="w-full h-full object-contain"
-                  />
-                )}
+                <img
+                  src={logoUrl}
+                  alt="Company Logo"
+                  className="w-full h-full object-contain"
+                />
                 <Button
                   variant="destructive"
                   size="icon"

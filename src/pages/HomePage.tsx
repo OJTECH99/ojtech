@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '../components/ui/Button';
+import { Button } from '../components/ui/button';
 import { useAuth } from '../providers/AuthProvider';
-import { ArrowRight, Briefcase, Brain, UserCheck, Award, Rocket, CheckCircle, ChevronRight, Star, ExternalLink, Building2 } from 'lucide-react';
+import { ArrowRight, Briefcase, Brain, UserCheck, CheckCircle, ChevronRight, Star, Building2 } from 'lucide-react';
 import { WaveyHeroHeader } from '../components/ui/WaveyHeroHeader';
 
 export const HomePage: React.FC = () => {
-  const { user } = useAuth();
+  const {  } = useAuth();
 
   // Partner companies with names, website URLs, and logo paths
   const partnerCompanies = [

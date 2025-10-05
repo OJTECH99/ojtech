@@ -1,7 +1,4 @@
-import React, { Component } from 'react';
-import * as TogglePrimitive from '@radix-ui/react-toggle';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../../lib/utils';
+import { Component } from 'react';
 
 class Toggle extends Component<any, any> {
   render() {

@@ -1,6 +1,5 @@
 import { Command as CommandPrimitive } from "cmdk";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent } from "@/components/ui/Dialog";
 import * as React from "react";
 
 const Command = React.forwardRef<

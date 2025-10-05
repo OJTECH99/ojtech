@@ -2,7 +2,6 @@ import React, { Component, ChangeEvent, FormEvent } from 'react';
 import { Navigate } from 'react-router-dom';
 import profileService from '../../lib/api/profileService';
 import { AuthContext } from '../../providers/AuthProvider';
-import { toast } from '../../components/ui/toast-utils';
 import GitHubProjectsStep from '../../components/onboarding/GitHubProjectsStep';
 import PersonalInfoStep from '../../components/onboarding/PersonalInfoStep';
 import EducationStep from '../../components/onboarding/EducationStep';
@@ -412,8 +411,7 @@ export class StudentOnboardingPage extends Component<{}, StudentOnboardingState>
       console.log('Submitting complete form data with education:', completeFormData);
       
       // Submit the onboarding data
-      const profileData = await profileService.completeStudentOnboarding(completeFormData);
-      
+     
       // Clear localStorage after successful onboarding
       localStorageManager.clearOnboardingData();
       

@@ -10,6 +10,10 @@ import { Card, CardContent } from '../ui/Card';
 import profileService from '../../lib/api/profileService';
 import { ToastContext } from '../../providers/ToastContext';
 import { PlusCircle, Trash2 } from 'lucide-react';
+import { format } from 'date-fns';
+import Calendar from '../ui/Calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/Popover';
+import { cn } from '../../lib/utils';
 
 interface GithubProject {
   name: string;
@@ -769,7 +773,7 @@ class ProfileEditModalClass extends Component<ProfileEditModalProps, ProfileEdit
               {formData.githubProjects.length === 0 ? (
                 <p className="text-muted-foreground text-sm">No projects added yet.</p>
               ) : (
-                formData.githubProjects.map((project, index) => (
+                formData.githubProjects.map((project, index) => {
                   <Card key={index} className="relative">
                     <Button 
                       variant="ghost" 
@@ -808,14 +812,137 @@ class ProfileEditModalClass extends Component<ProfileEditModalProps, ProfileEdit
                       )}
                     </CardContent>
                   </Card>
-                ))
-              )}
+                ))}
             </div>
           </TabsContent>
           
           {/* Certifications Tab */}
           <TabsContent value="certifications" className="space-y-4">
-            <p className="text-muted-foreground">Certifications content removed during cleanup. Please restore from original file if needed.</p>
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Add New Certification</h3>
+              <div>
+                <Label htmlFor="name">Certification Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={newCertification.name}
+                  onChange={this.handleCertificationInputChange}
+                  placeholder="AWS Certified Solutions Architect"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="issuer">Issuing Organization</Label>
+                <Input
+                  id="issuer"
+                  name="issuer"
+                  value={newCertification.issuer}
+                  onChange={this.handleCertificationInputChange}
+                  placeholder="Amazon Web Services"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="issueDate">Issue Date</Label>
+                  <Input
+                    id="issueDate"
+                    name="issueDate"
+                    type="date"
+                    value={newCertification.issueDate}
+                    onChange={this.handleCertificationInputChange}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="expiryDate">Expiry Date (Optional)</Label>
+                  <Input
+                    id="expiryDate"
+                    name="expiryDate"
+                    type="date"
+                    value={newCertification.expiryDate}
+                    onChange={this.handleCertificationInputChange}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="credentialId">Credential ID (Optional)</Label>
+                <Input
+                  id="credentialId"
+                  name="credentialId"
+                  value={newCertification.credentialId}
+                  onChange={this.handleCertificationInputChange}
+                  placeholder="ABC123XYZ"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="credentialUrl">Credential URL (Optional)</Label>
+                <Input
+                  id="credentialUrl"
+                  name="credentialUrl"
+                  value={newCertification.credentialUrl}
+                  onChange={this.handleCertificationInputChange}
+                  placeholder="https://verify.example.com/cert/123"
+                />
+              </div>
+              
+              <Button 
+                type="button" 
+                onClick={this.handleAddCertification}
+                disabled={!newCertification.name || !newCertification.issuer || !newCertification.issueDate}
+                className="w-full"
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Certification
+              </Button>
+            </div>
+            
+            <div className="space-y-4 mt-6">
+              <h3 className="text-lg font-medium">Your Certifications</h3>
+              {formData.certifications.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No certifications added yet.</p>
+              ) : (
+                formData.certifications.map((cert, index) => {
+                  <Card key={index} className="relative">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute right-2 top-2"
+                      onClick={() => this.handleRemoveCertification(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <CardContent className="pt-6">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-medium">{cert.name}</h4>
+                          <p className="text-sm text-muted-foreground">{cert.issuer}</p>
+                        </div>
+                        <div className="text-sm text-right">
+                          <p>Issued: {cert.issueDate && new Date(cert.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</p>
+                          {cert.expiryDate && (
+                            <p>Expires: {new Date(cert.expiryDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</p>
+                          )}
+                        </div>
+                      </div>
+                      {cert.credentialId && (
+                        <p className="text-sm mt-2">Credential ID: {cert.credentialId}</p>
+                      )}
+                      {cert.credentialUrl && (
+                        <a 
+                          href={cert.credentialUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-500 hover:underline block mt-1"
+                        >
+                          View Credential
+                        </a>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+            </div>
           </TabsContent>
           </Tabs>
           
@@ -832,7 +959,6 @@ class ProfileEditModalClass extends Component<ProfileEditModalProps, ProfileEdit
       </Dialog>
     );
   }
-}
 
 // Wrap the class component with ToastContext
 const ProfileEditModal = (props: ProfileEditModalProps) => {

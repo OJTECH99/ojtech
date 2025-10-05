@@ -1,13 +1,11 @@
-import React, { Component, createRef } from 'react';
+import React, { Component } from 'react';
 import axios from 'axios';
-import { Button } from '../components/ui/Button';
-import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/button';
 import { AuthContext } from '../providers/AuthProvider';
-import { Loader2, Download, Code, FileText, Edit2, Save, X } from 'lucide-react';
+import { Loader2, Download, FileText, Edit2, Save, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import cvGeneratorService from '../lib/api/cvGeneratorService';
 import profileService from '../lib/api/profileService';
-import { toast } from '../components/ui/toast-utils';
 import { ToastContext } from '../providers/ToastContext';
 import { ToastProps } from '../components/ui/use-toast';
 import resumeHtmlGenerator from '../lib/api/resumeHtmlGenerator';
@@ -464,16 +462,6 @@ const EditableResumeView: React.FC<{
     }));
   };
 
-  const handleArrayChange = (section: keyof ResumeData, index: number, field: string, value: any) => {
-    setEditedData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [Array.isArray(prev[section]) ? index : field]: value
-      }
-    }));
-  };
-
   const handleSave = () => {
     onSave(editedData);
   };
@@ -695,7 +683,6 @@ const EditableResumeView: React.FC<{
                           handleChange('experience', 'experiences', newExp);
                         }}
                         placeholder="Job Title"
-                        label="Title"
                       />
                       <Input
                         value={exp.company}
@@ -705,7 +692,6 @@ const EditableResumeView: React.FC<{
                           handleChange('experience', 'experiences', newExp);
                         }}
                         placeholder="Company"
-                        label="Company"
                       />
                       <div className="flex gap-3">
                         <Input
@@ -716,7 +702,6 @@ const EditableResumeView: React.FC<{
                             handleChange('experience', 'experiences', newExp);
                           }}
                           placeholder="Location"
-                          label="Location"
                           className="flex-1"
                         />
                         <Input
@@ -727,7 +712,6 @@ const EditableResumeView: React.FC<{
                             handleChange('experience', 'experiences', newExp);
                           }}
                           placeholder="Date Range"
-                          label="Date Range"
                           className="flex-1"
                         />
                       </div>
@@ -817,7 +801,6 @@ const EditableResumeView: React.FC<{
                           handleChange('projects', 'projectsList', newProjects);
                         }}
                         placeholder="Project Name"
-                        label="Name"
                         className='bg-white text-gray-800'
                       />
                       <Input
@@ -828,7 +811,6 @@ const EditableResumeView: React.FC<{
                           handleChange('projects', 'projectsList', newProjects);
                         }}
                         placeholder="Technologies Used"
-                        label="Technologies"
                         className="bg-white text-gray-800"
                       />
                     </div>

@@ -1,6 +1,4 @@
-import React, { Component } from 'react';
 import { cn } from "../../lib/utils";
-import { animate } from "motion";
 
 interface GlowingEffectProps {
   blur?: number;
@@ -13,28 +11,20 @@ interface GlowingEffectProps {
   disabled?: boolean;
   movementDuration?: number;
   borderWidth?: number;
+  children?: React.ReactNode;
 }
 
-class GlowingEffect extends Component<GlowingEffectProps, any> {
-  componentDidMount() {
-    // TODO: Move useEffect with empty dependency array here
-  }
-
-  componentDidUpdate(prevProps: GlowingEffectProps, prevState: any) {
-    // TODO: Move useEffect with dependencies here
-  }
-
-  componentWillUnmount() {
-    // TODO: Move cleanup functions from useEffect here
-  }
-
-  // TODO: Replace useRef with React.createRef()
-
-  render() {
-    return () => {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-  }
-}
+const GlowingEffect: React.FC<GlowingEffectProps> = ({ 
+  className, 
+  children,
+  disabled = false 
+}) => {
+  // TODO: Implement glowing effect with motion animation
+  return (
+    <div className={cn("relative", className, disabled && "pointer-events-none")}>
+      {children}
+    </div>
+  );
+};
 
 export default GlowingEffect;

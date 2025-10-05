@@ -15,6 +15,8 @@ interface AuthContextType {
   googleLogin: (tokenId: string) => Promise<AppUser>;
   githubLogin: (code: string) => Promise<AppUser>;
   logout: () => void;
+  signOut: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ error?: any }>;
   isLoading: boolean;
   isAuthenticated: boolean;
   profile: any;
@@ -22,6 +24,9 @@ interface AuthContextType {
   requiresPasswordReset: boolean;
   fetchUserProfile: () => Promise<void>; // Added to manually refresh profile
   updateProfile: (profile: any) => void; // Added to update user/profile
+  updateOnboardingStatus: (completed: boolean) => Promise<void>;
+  userRole: string | null;
+  onboardingCompleted: boolean;
 }
 
 // Create context outside of any component
@@ -398,6 +403,30 @@ class AuthProviderComponent extends Component<AuthProviderProps, AuthProviderSta
     }));
   };
 
+  signOut = async () => {
+    await this.logout();
+  };
+
+  signIn = async (email: string, password: string) => {
+    try {
+      await this.login(email, password);
+      return {};
+    } catch (error: any) {
+      return { error };
+    }
+  };
+
+  updateOnboardingStatus = async (completed: boolean) => {
+    if (this.state.user) {
+      const updatedUser = { ...this.state.user, hasCompletedOnboarding: completed };
+      this.setState({
+        user: updatedUser,
+        needsOnboarding: !completed
+      });
+      await this.fetchUserProfile();
+    }
+  };
+
   render() {
     const { user, isLoading } = this.state;
     const value: AuthContextType = {
@@ -407,6 +436,8 @@ class AuthProviderComponent extends Component<AuthProviderProps, AuthProviderSta
       googleLogin: this.googleLogin,
       githubLogin: this.githubLogin,
       logout: this.logout,
+      signOut: this.signOut,
+      signIn: this.signIn,
       isLoading,
       isAuthenticated: this.state.isAuthenticated,
       profile: this.state.profile,
@@ -414,6 +445,9 @@ class AuthProviderComponent extends Component<AuthProviderProps, AuthProviderSta
       requiresPasswordReset: this.state.requiresPasswordReset,
       fetchUserProfile: this.fetchUserProfile,
       updateProfile: this.updateProfile,
+      updateOnboardingStatus: this.updateOnboardingStatus,
+      userRole: user?.roles?.[0] || null,
+      onboardingCompleted: user?.hasCompletedOnboarding || false,
     };
 
     return <AuthContext.Provider value={value}>{this.props.children}</AuthContext.Provider>;

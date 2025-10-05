@@ -158,18 +158,19 @@ export const AdminJobForm: React.FC<AdminJobFormProps> = ({
   };
 
   const addTag = () => {
-    if (newTag.trim() && !state.formData.internalTags.includes(newTag.trim())) {
+    if (newTag.trim() && !state.formData.internalTags?.includes(newTag.trim())) {
+      const updatedTags = [...(state.formData.internalTags || []), newTag.trim()];
       setState(prev => ({
         ...prev,
-        formData: { ...prev.formData, internalTags: [...prev.formData.internalTags, newTag.trim()] },
+        formData: { ...prev.formData, internalTags: updatedTags },
       }));
-      handleInputChange('internalTags', [...state.formData.internalTags, newTag.trim()]);
+      handleInputChange('internalTags', updatedTags);
       setNewTag('');
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    handleInputChange('internalTags', state.formData.internalTags.filter(tag => tag !== tagToRemove));
+    handleInputChange('internalTags', (state.formData.internalTags || []).filter(tag => tag !== tagToRemove));
   };
 
   const validateForm = (): boolean => {
@@ -645,7 +646,7 @@ export const AdminJobForm: React.FC<AdminJobFormProps> = ({
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {state.formData.internalTags.map((tag, index) => (
+                {(state.formData.internalTags || []).map((tag, index) => (
                   <Badge key={index} variant="secondary" className="flex items-center">
                     {tag}
                     <button

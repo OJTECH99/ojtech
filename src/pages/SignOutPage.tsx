@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../providers/AuthProvider';
 import { AuthLayout } from '../components/layouts/AuthLayout';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/card';
+import { Button } from '../components/ui/button';
 import { Loader2 } from 'lucide-react';
 
 interface SignOutPageState {
@@ -13,7 +13,7 @@ interface SignOutPageState {
 
 export class SignOutPage extends Component<{}, SignOutPageState> {
   static contextType = AuthContext;
-  context!: React.ContextType<typeof AuthContext>;
+  declare context: React.ContextType<typeof AuthContext>;
 
   constructor(props: {}) {
     super(props);

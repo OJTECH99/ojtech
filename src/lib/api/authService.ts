@@ -32,9 +32,7 @@ export interface ChangePasswordRequest {
   confirmPassword: string;
 }
 
-interface GoogleAuthResponse {
-  accessToken: string;
-}
+
 
 const register = async (data: SignupData) => {
   console.log('Sending registration data:', JSON.stringify(data, null, 2));

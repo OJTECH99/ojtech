@@ -1,7 +1,5 @@
-import React, { Component, createRef } from 'react';
-import { cn } from "../../lib/utils";
+import { Component, createRef } from 'react';
 import { Upload, File, X } from "lucide-react";
-import { Button } from "./button";
 
 interface FileDropInputProps {
   onChange: (file: File | null) => void;

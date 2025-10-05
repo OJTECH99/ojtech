@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import  { Component } from 'react';
 import { Loader2 } from "lucide-react";
 
 interface PdfViewerProps {

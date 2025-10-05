@@ -1,7 +1,6 @@
 import { useContext } from "react";
 import { ToastContext } from "../../providers/ToastContext";
 import { toast as toastUtils } from "./toast-utils";
-import React from "react";
 
 export interface ToastProps {
   title?: string;

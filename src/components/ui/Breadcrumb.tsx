@@ -1,17 +1,14 @@
-import React, { Component } from 'react';
-import { Slot } from '@radix-ui/react-slot';
-import { ChevronRight, MoreHorizontal } from 'lucide-react';
+import { Component } from 'react';
 import { cn } from '../../lib/utils';
 
 class Breadcrumb extends Component<any, any> {
   render() {
+    const { className, children, ...props } = this.props;
     return (
-    <Comp
-      ref={ref}
-      className={cn('transition-colors hover:text-foreground', className)}
-      {...props}
-    />
-  );
+      <nav aria-label="Breadcrumb" className={cn('flex items-center gap-2 text-sm', className)} {...props}>
+        {children}
+      </nav>
+    );
   }
 }
 

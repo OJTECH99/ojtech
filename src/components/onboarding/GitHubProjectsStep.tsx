@@ -225,7 +225,7 @@ export default class GitHubProjectsStep extends Component<GitHubProjectsStepProp
       currentProjectTechnologies,
       isEnhancing
     } = this.state;
-    const { onNext } = this.props;
+    const {  } = this.props;
 
     return (
       <div className="space-y-8 max-w-3xl mx-auto">

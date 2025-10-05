@@ -1,17 +1,16 @@
 import React, { Component, ChangeEvent, FormEvent } from 'react';
 import jobService from '@/lib/api/jobService';
-import { useNavigate, useParams, Link, Navigate, useLocation } from 'react-router-dom';
+import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import { AuthContext } from '@/providers/AuthProvider';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Label } from '@/components/ui/Label';
-import { Checkbox } from '@/components/ui/Checkbox';
 import * as RadioGroup from '@radix-ui/react-radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/Command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, DollarSign, FileText, Code, Plus, X } from "lucide-react";
 

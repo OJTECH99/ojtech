@@ -1,5 +1,4 @@
-import React, { Component } from 'react';
-import * as AspectRatioPrimitive from '@radix-ui/react-aspect-ratio';
+import { Component } from 'react';
 
 class AspectRatio extends Component<any, any> {
   render() {

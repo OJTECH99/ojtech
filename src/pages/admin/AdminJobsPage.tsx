@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Checkbox } from '../../components/ui/Checkbox';
 import { AdminJobCard } from '../../components/admin/AdminJobCard';
@@ -9,11 +9,8 @@ import { AdminJobFilters } from '../../components/admin/AdminJobFilters';
 import { AdminBulkActions } from '../../components/admin/AdminBulkActions';
 import Pagination from '../../components/ui/Pagination';
 import { 
-  AdminJob, 
   AdminJobSearchDto, 
-  AdminJobFilterDto,
   AdminJobsPageState,
-  BulkOperationResult
 } from '@/lib/types/adminJob';
 import { adminJobService } from '@/lib/api/adminJobService';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +18,6 @@ import {
   Plus, 
   RefreshCw,
   BarChart3,
-  Settings,
   Download,
   Eye,
   Grid,

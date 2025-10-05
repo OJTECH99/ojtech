@@ -61,9 +61,8 @@ interface PublicOnlyRouteProps {
 
 // A route that is only accessible to unauthenticated users
 export const PublicOnlyRoute: React.FC<PublicOnlyRouteProps> = ({ children }) => {
-  const { user, isLoading } = useAuth();
-  const location = useLocation();
-
+  const { user = null, isLoading = false } = useAuth() || {};
+  
   // If still loading, show a loading spinner
     if (isLoading) {
       return (

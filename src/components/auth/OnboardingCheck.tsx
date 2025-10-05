@@ -34,13 +34,15 @@ export class OnboardingCheck extends Component<OnboardingCheckProps> {
   }
   
   checkOnboardingStatus() {
+    if (!this.context) return;
+    
     const { isAuthenticated, userRole, onboardingCompleted } = this.context;
     const currentPath = window.location.pathname;
     
     // Debug information to help troubleshoot navigation
     console.debug('OnboardingCheck status:', { 
       isAuthenticated, 
-      userRole, 
+      userRole,
       onboardingCompleted,
       currentPath,
       shouldRedirect: this.shouldRedirect()
@@ -48,6 +50,8 @@ export class OnboardingCheck extends Component<OnboardingCheckProps> {
   }
   
   shouldRedirect() {
+    if (!this.context) return false;
+    
     const { isAuthenticated, userRole, onboardingCompleted } = this.context;
     
     // Don't check if user is not authenticated
@@ -110,6 +114,8 @@ export class OnboardingCheck extends Component<OnboardingCheckProps> {
   }
   
   getRedirectPath() {
+    if (!this.context) return '/';
+    
     const { userRole } = this.context;
     
     switch (userRole) {

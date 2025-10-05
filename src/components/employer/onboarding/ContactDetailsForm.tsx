@@ -132,7 +132,7 @@ export class ContactDetailsForm extends Component<ContactDetailsFormProps, Conta
         
         <Form>
           <form onSubmit={this.handleSubmit} className="space-y-8">
-            <FormField>
+            <FormField name="contactPerson">
               <FormItem>
                 <FormLabel>Contact Person</FormLabel>
                 <FormControl>
@@ -149,7 +149,7 @@ export class ContactDetailsForm extends Component<ContactDetailsFormProps, Conta
               </FormItem>
             </FormField>
 
-            <FormField>
+            <FormField name="position">
               <FormItem>
                 <FormLabel>Position</FormLabel>
                 <FormControl>
@@ -167,7 +167,7 @@ export class ContactDetailsForm extends Component<ContactDetailsFormProps, Conta
             </FormField>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField>
+              <FormField name="contactEmail">
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
@@ -184,7 +184,7 @@ export class ContactDetailsForm extends Component<ContactDetailsFormProps, Conta
                 </FormItem>
               </FormField>
 
-              <FormField>
+              <FormField name="contactPhone">
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
@@ -202,7 +202,7 @@ export class ContactDetailsForm extends Component<ContactDetailsFormProps, Conta
               </FormField>
             </div>
 
-            <FormField>
+            <FormField name="companyAddress">
               <FormItem>
                 <FormLabel>Company Address</FormLabel>
                 <FormControl>

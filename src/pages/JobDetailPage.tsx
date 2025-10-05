@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { Link, useParams, useNavigate, NavigateFunction, useLocation, Location } from 'react-router-dom';
 import { AuthContext } from '../providers/AuthProvider';
-import { Button } from '../components/ui/Button';
-import { Loader2, MapPin, Briefcase, DollarSign, ArrowLeft, Calendar, Users, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Loader2, MapPin, Briefcase, DollarSign, ArrowLeft, Users, CheckCircle, XCircle, Clock } from 'lucide-react';
 import apiClient from '../lib/api/apiClient';
 import authService from '../lib/api/authService';
 

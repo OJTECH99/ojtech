@@ -1,13 +1,12 @@
 import React, { Component } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { AuthContext } from '../providers/AuthProvider';
-import { Button } from '../components/ui/Button';
+import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
 import { Loader2, Github, Eye, EyeOff } from 'lucide-react';
-import { Card } from '../components/ui/Card';
+import { Card } from '../components/ui/card';
 import { AuthLayout } from '../components/layouts/AuthLayout';
 import profileService from '../lib/api/profileService';
 import { toast } from '../components/ui/toast-utils';
@@ -28,8 +27,7 @@ export class LoginPage extends Component<{}, LoginPageState> {
   declare context: React.ContextType<typeof AuthContext>;
   
   // API base URL
-  private API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  
+ 
   // GitHub OAuth Configuration
   private GITHUB_CLIENT_ID = 'Ov23li4gxkGK900aEkLs';
   private GITHUB_REDIRECT_URI = `${window.location.origin}/auth/github/callback`;

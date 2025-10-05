@@ -1,10 +1,10 @@
-import React, { Component, createRef } from 'react';
+import  { Component } from 'react';
 import { Button } from "../ui/Button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "../ui/Card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle} from "../ui/Card";
 import { toast } from "../ui/toast-utils";
-import { Loader2, BriefcaseIcon, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Badge } from "../ui/Badge";
+import { Badge } from "../ui/badge";
 
 interface JobMatch {
   id: string;

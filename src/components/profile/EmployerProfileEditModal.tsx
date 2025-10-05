@@ -6,7 +6,6 @@ import { Label } from '../ui/Label';
 import { Textarea } from '../ui/Textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select';
 import profileService from '../../lib/api/profileService';
-import { useToast } from '../ui/use-toast';
 import { ToastContext } from '../../providers/ToastContext';
 import { Upload } from 'lucide-react';
 

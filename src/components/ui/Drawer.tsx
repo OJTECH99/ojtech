@@ -1,6 +1,4 @@
-import React, { Component } from 'react';
-import { Drawer as DrawerPrimitive } from 'vaul';
-import { cn } from '../../lib/utils';
+import { Component } from 'react';
 
 class Drawer extends Component<any, any> {
   render() {

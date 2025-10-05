@@ -1,7 +1,7 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/Card";
 import { Button } from "../ui/Button";
-import { Badge } from "../ui/Badge";
+import { Badge } from '../ui/badge';
 import { Building, MapPin, Users, ExternalLink } from "lucide-react";
 
 interface CompanyCardProps {

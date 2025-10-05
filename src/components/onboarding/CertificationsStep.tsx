@@ -1,4 +1,4 @@
-import React, { Component, ChangeEvent } from 'react';
+import  { Component, ChangeEvent } from 'react';
 import localStorageManager from '../../lib/utils/localStorageManager';
 
 export interface Certification {

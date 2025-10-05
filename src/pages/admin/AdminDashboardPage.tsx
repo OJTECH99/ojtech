@@ -1,7 +1,7 @@
 import React, { Component } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { Users, Briefcase, FilePlus2, LineChart } from "lucide-react";
-import { Skeleton } from "../../components/ui/Skeleton";
+import { Skeleton } from "../../components/ui/skeleton";
 import { Navigate, Link } from "react-router-dom";
 import { AuthContext } from "../../providers/AuthProvider";
 import adminService from "../../lib/api/adminService";

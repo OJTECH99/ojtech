@@ -1,6 +1,4 @@
-import React, { Component } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../../lib/utils';
+import { Component } from 'react';
 
 class Alert extends Component<any, any> {
   render() {

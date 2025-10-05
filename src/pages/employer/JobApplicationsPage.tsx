@@ -1,14 +1,12 @@
 import React, { Component, createRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "../../components/ui/Table";
-import { Skeleton } from "../../components/ui/Skeleton";
-import { FileText, Download, Eye, Mail, CheckCircle, XCircle, FileDown, Printer } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Skeleton } from "../../components/ui/skeleton";
+import { FileText, Eye, Mail, CheckCircle, XCircle, FileDown } from "lucide-react";
 import { Navigate, useParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../providers/AuthProvider";
 import jobApplicationService from "../../lib/api/jobApplicationService";
 import { JobApplication, ApplicationStatus } from "../../lib/types/application";
-import { cn } from "../../lib/utils";
 import { 
   Dialog, 
   DialogContent, 

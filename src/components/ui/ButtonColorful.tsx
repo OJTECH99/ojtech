@@ -1,10 +1,15 @@
-import React, { Component } from 'react';
-import { Button } from "../../components/ui/button";
+import { Component } from 'react';
+import { Button } from "./button";
 import { cn } from "../../lib/utils";
 import { ArrowUpRight } from "lucide-react";
 
-class ButtonColorful extends Component<any, any> {
+interface ButtonColorfulProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  label: string;
+}
+
+class ButtonColorful extends Component<ButtonColorfulProps> {
   render() {
+    const { className, label, children, ...props } = this.props;
     return (
         <Button
             className={cn(
@@ -29,11 +34,10 @@ class ButtonColorful extends Component<any, any> {
             {/* Content */}
             <div className="relative flex items-center justify-center gap-2">
                 <span className="text-white dark:text-zinc-900">{label}</span>
-                <ArrowUpRight className="w-3.5 h-3.5 text-white/90 dark:text-zinc-900/90" />
+                {children ?? <ArrowUpRight className="h-4 w-4 text-white dark:text-zinc-900" />}
             </div>
         </Button>
     );
   }
 }
-
 export default ButtonColorful;

@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { AuthContext } from '@/providers/AuthProvider';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast-utils';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/Card';
-import { PlusCircle, Edit3, Trash2, Eye, MapPin, Briefcase, Calendar, Clock, X } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { PlusCircle, Edit3, Eye, MapPin, Briefcase, Calendar, X } from 'lucide-react';
 import jobService from '@/lib/api/jobService';
 import AlertDialog from '@/components/ui/AlertDialog';
 

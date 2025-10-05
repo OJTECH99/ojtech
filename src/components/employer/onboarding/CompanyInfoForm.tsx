@@ -154,7 +154,7 @@ export class CompanyInfoForm extends Component<CompanyInfoFormProps, CompanyInfo
         
         <Form>
           <form onSubmit={this.handleSubmit} className="space-y-8">
-            <FormField>
+            <FormField name="companyWebsite">
               <FormItem>
                 <FormLabel>Company Website</FormLabel>
                 <FormControl>
@@ -172,7 +172,7 @@ export class CompanyInfoForm extends Component<CompanyInfoFormProps, CompanyInfo
             </FormField>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField>
+              <FormField name="companySize">
                 <FormItem>
                   <FormLabel>Company Size</FormLabel>
                   <Select 
@@ -198,7 +198,7 @@ export class CompanyInfoForm extends Component<CompanyInfoFormProps, CompanyInfo
                 </FormItem>
               </FormField>
 
-              <FormField>
+              <FormField name="industry">
                 <FormItem>
                   <FormLabel>Industry</FormLabel>
                   <FormControl>
@@ -215,7 +215,7 @@ export class CompanyInfoForm extends Component<CompanyInfoFormProps, CompanyInfo
               </FormField>
             </div>
 
-            <FormField>
+            <FormField name="companyDescription">
               <FormItem>
                 <FormLabel>Company Description</FormLabel>
                 <FormControl>

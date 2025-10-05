@@ -2,7 +2,6 @@ import React, { Component, ChangeEvent, FormEvent } from 'react';
 import { Navigate } from 'react-router-dom';
 import profileService from '@/lib/api/profileService';
 import { AuthContext } from '@/providers/AuthProvider';
-import { toast } from '../../components/ui/toast-utils';
 import { ToastHelper } from '../../providers/ToastContext';
 
 interface EmployerProfileData {
@@ -248,7 +247,7 @@ export class EmployerOnboardingPage extends Component<{}, EmployerOnboardingStat
   };
 
   render() {
-    const { formData, logoFile, error, isLoading, redirectTo } = this.state;
+    const { formData, error, isLoading, redirectTo } = this.state;
     const { user } = this.context || {};
 
     if (redirectTo) {

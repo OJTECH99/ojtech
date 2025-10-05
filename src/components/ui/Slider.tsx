@@ -1,6 +1,4 @@
-import React, { Component } from 'react';
-import * as SliderPrimitive from '@radix-ui/react-slider';
-import { cn } from '../../lib/utils';
+import { Component } from 'react';
 
 class Slider extends Component<any, any> {
   render() {

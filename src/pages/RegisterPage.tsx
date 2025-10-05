@@ -1,17 +1,15 @@
 import React, { Component } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import axios from 'axios';
 import { AuthContext } from '../providers/AuthProvider';
-import { Button } from '../components/ui/Button';
+import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
-import { Card } from '../components/ui/Card';
+import { Card } from '../components/ui/card';
 import { Loader2, Github, Eye, EyeOff } from 'lucide-react';
 import { AuthLayout } from '../components/layouts/AuthLayout';
 import { toast } from '../components/ui/toast-utils';
 import { GoogleLogin } from '@react-oauth/google';
 import emailjs from '@emailjs/browser';
-import { normalizedApiBaseUrl } from '../apiConfig';
 
 interface RegisterPageState {
   fullName: string;
@@ -36,12 +34,11 @@ export class RegisterPage extends Component<{}, RegisterPageState> {
   static contextType = AuthContext;
   declare context: React.ContextType<typeof AuthContext>;
   
-  // API base URL
-  private API_BASE_URL = normalizedApiBaseUrl;
+  // API base URL is available via normalizedApiBaseUrl import
   // EmailJS credentials
-  private EMAIL_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_gzgua2e';
-  private EMAIL_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'yhRZXtxm7JWqyq2ep';
-  private EMAIL_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'yhRZXtxm7JWqyq2ep';
+  private EMAIL_SERVICE_ID = (import.meta as any).env?.VITE_EMAILJS_SERVICE_ID || 'service_gzgua2e';
+  private EMAIL_TEMPLATE_ID = (import.meta as any).env?.VITE_EMAILJS_TEMPLATE_ID || 'yhRZXtxm7JWqyq2ep';
+  private EMAIL_PUBLIC_KEY = (import.meta as any).env?.VITE_EMAILJS_PUBLIC_KEY || 'yhRZXtxm7JWqyq2ep';
   
   // GitHub OAuth Configuration
   private GITHUB_CLIENT_ID = 'Ov23li4gxkGK900aEkLs';

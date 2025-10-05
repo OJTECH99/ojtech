@@ -1,6 +1,4 @@
-import React, { Component } from 'react';
-import * as HoverCardPrimitive from '@radix-ui/react-hover-card';
-import { cn } from '../../lib/utils';
+import { Component } from 'react';
 
 class HoverCard extends Component<any, any> {
   render() {

@@ -1,13 +1,22 @@
-import React, { Component } from 'react';
 import { cn } from "../../lib/utils";
-import {
+
+interface BentoItem {
+    icon?: React.ReactNode;
+    title: string;
+    description: string;
+    status?: string;
+    meta?: string;
+    tags?: string[];
+    cta?: string;
+    colSpan?: number | string;
+    hasPersistentHover?: boolean;
+}
 
 interface BentoGridProps {
     items: BentoItem[];
 }
 
-class BentoGrid extends Component<BentoGridProps, any> {
-  render() {
+const BentoGrid: React.FC<BentoGridProps> = ({ items }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 max-w-7xl mx-auto">
             {items.map((item, index) => (
@@ -94,7 +103,6 @@ class BentoGrid extends Component<BentoGridProps, any> {
             ))}
         </div>
     );
-  }
-}
+};
 
 export default BentoGrid;

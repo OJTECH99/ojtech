@@ -2,7 +2,7 @@ import { Component, createRef, RefObject } from "react";
 import TinderCard from "react-tinder-card";
 import { Loader2, Briefcase, MapPin, Calendar, DollarSign, Info, HelpCircle, ChevronRight, AlertTriangle, FileText, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Button } from "../components/ui/Button";
+import { Button } from "../components/ui/button";
 import { EmailDraftModal } from "../components/EmailDraftModal";
 import jobApplicationService, { EmailDraft } from "../lib/api/jobApplicationService";
 import profileService from "../lib/api/profileService";
@@ -119,7 +119,7 @@ export class OpportunitiesPage extends Component<{}, OpportunitiesPageState> {
     }
   };
   
-  componentDidUpdate(prevProps: {}, prevState: OpportunitiesPageState) {
+  componentDidUpdate(_prevProps: {}, prevState: OpportunitiesPageState) {
     // Update refs if jobs array changes
     if (prevState.jobs.length !== this.state.jobs.length) {
       this.childRefs = Array(this.state.jobs.length)

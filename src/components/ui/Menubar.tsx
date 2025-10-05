@@ -1,19 +1,20 @@
-import React, { Component } from 'react';
-import * as MenubarPrimitive from '@radix-ui/react-menubar';
-import { Check, ChevronRight, Circle } from 'lucide-react';
+import { Component } from 'react';
 import { cn } from '../../lib/utils';
 
-class Menubar extends Component<any, any> {
+interface MenubarProps extends React.HTMLAttributes<HTMLSpanElement> {}
+
+class Menubar extends Component<MenubarProps> {
   render() {
+    const { className, ...props } = this.props;
     return (
-    <span
-      className={cn(
-        'ml-auto text-xs tracking-widest text-muted-foreground',
-        className
-      )}
-      {...props}
-    />
-  );
+      <span
+        className={cn(
+          'ml-auto text-xs tracking-widest text-muted-foreground',
+          className
+        )}
+        {...props}
+      />
+    );
   }
 }
 

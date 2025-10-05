@@ -1,17 +1,25 @@
-import React, { Component } from 'react';
-import { Button } from "../../components/ui/button";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { Component } from 'react';
+import { Button } from "../../components/ui/Button";
 import { GithubIcon } from "lucide-react";
-// Next Image replaced with standard img;
 
 class OauthButtons extends Component<any, any> {
+  signInWithGoogle = () => {
+    // TODO: Implement Google OAuth
+    console.log('Google sign in');
+  };
+
+  signInWithGithub = () => {
+    // TODO: Implement GitHub OAuth
+    console.log('GitHub sign in');
+  };
+
   render() {
     return (
     <div className="flex flex-col gap-4 w-full">
       <Button
         variant="outline"
         className="flex items-center gap-2"
-        onClick={signInWithGoogle}
+        onClick={this.signInWithGoogle}
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -24,7 +32,7 @@ class OauthButtons extends Component<any, any> {
       <Button
         variant="outline"
         className="flex items-center gap-2"
-        onClick={signInWithGithub}
+        onClick={this.signInWithGithub}
       >
         <GithubIcon className="w-5 h-5" />
         Continue with GitHub

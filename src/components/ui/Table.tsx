@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import { cn } from "../../lib/utils";
 
 interface TableProps extends React.HTMLAttributes<HTMLTableElement> {}

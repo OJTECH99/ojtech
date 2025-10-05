@@ -1,54 +1,27 @@
-import React, { Component } from 'react';
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import {
-import {
-import { Skeleton } from "../../components/ui/skeleton";
-import { formatDistanceToNow } from "date-fns";
-import { MoreHorizontal, PenSquare, Trash2, Users } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useToast } from "../../hooks/use-toast";
-import { deleteJob } from "../../lib/actions/job-actions";
+import React from 'react';
 
 interface JobListProps {
-  jobs: Job[];
-  isLoading?: boolean;
-  onJobDeleted?: (jobId: string) => void;
+  jobs: any[];
 }
 
-interface JobListState {
-  // TODO: Add state properties
-}
-
-class JobList extends Component<JobListProps, JobListState> {
-  constructor(props: JobListProps) {
-    super(props);
-    this.state = {
-      // TODO: Initialize state from useState hooks
-    };
-  }
-
-  render() {
-    return (
-      <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <Card key={i} className="border shadow-sm">
-            <CardHeader className="pb-2">
-              <Skeleton className="h-6 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-4 w-3/4" />
-            </CardContent>
-            <CardFooter>
-              <Skeleton className="h-9 w-24" />
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-}
+const JobList: React.FC<JobListProps> = ({ jobs }) => {
+  // TODO: Implement job list display
+  return (
+    <div className="space-y-4">
+      {jobs.length > 0 ? (
+        jobs.map((job) => (
+          <div key={job.id} className="border rounded-lg p-4">
+            <h3 className="font-semibold">{job.title}</h3>
+            <p className="text-sm text-muted-foreground">{job.company}</p>
+          </div>
+        ))
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No jobs found</p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default JobList;

@@ -1,11 +1,11 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { Link } from "react-router-dom";
-import { Job } from "../../../lib/types/employer";
+import { Job } from '@/lib/types';
 import { cn } from "../../../lib/utils";
-import { Badge } from "../../../components/ui/Badge";
-import { Button } from "../../../components/ui/Button";
+import { Badge } from '@/components/ui/badge';
+import { Button } from "../../../components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../../../components/ui/DropdownMenu";
-import { Briefcase, MapPin, MoreVertical, Eye, Edit, Trash2, Users, Clock, ExternalLink, AlertCircle, CheckCircle2, XCircle, Building } from "lucide-react";
+import { Briefcase, MapPin, MoreVertical, Eye, Edit, Trash2, Users, Clock, AlertCircle, CheckCircle2, XCircle, Building } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
 
 interface EmployerJobCardProps {
@@ -63,8 +63,10 @@ export class EmployerJobCard extends Component<EmployerJobCardProps> {
 
   render() {
     const { job, onViewApplications, onEditJob, onDeleteJob, isDeleting } = this.props;
-    const createdDate = new Date(job.created_at);
+    const createdDate = new Date(job.postedDate);
     const formattedDate = formatDistanceToNow(createdDate, { addSuffix: true });
+    const derivedStatus = job.isActive ? "active" : "closed";
+    const applicationsCount: number = (job as any).applications_count ?? 0;
 
     return (
       <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
@@ -72,9 +74,9 @@ export class EmployerJobCard extends Component<EmployerJobCardProps> {
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-3">
               <div className="h-12 w-12 rounded-md bg-muted/50 flex items-center justify-center">
-                {job.company_logo ? (
+                {job.companyLogo ? (
                   <img 
-                    src={job.company_logo} 
+                    src={job.companyLogo} 
                     alt={job.company} 
                     className="h-10 w-10 object-contain" 
                   />
@@ -91,7 +93,7 @@ export class EmployerJobCard extends Component<EmployerJobCardProps> {
             </div>
             
             <div className="flex items-center space-x-2">
-              {this.getStatusBadge(job.status)}
+              {this.getStatusBadge(derivedStatus)}
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -132,7 +134,7 @@ export class EmployerJobCard extends Component<EmployerJobCardProps> {
               </div>
               <div className="flex items-center text-sm text-muted-foreground">
                 <Briefcase className="mr-2 h-4 w-4" />
-                {job.job_type}
+                {job.jobType}
               </div>
               <div className="flex items-center text-sm text-muted-foreground">
                 <Clock className="mr-2 h-4 w-4" />
@@ -143,7 +145,7 @@ export class EmployerJobCard extends Component<EmployerJobCardProps> {
             <div className="flex items-center justify-end space-x-2">
               <div className="flex items-center text-sm text-muted-foreground mr-2">
                 <Users className="mr-1 h-4 w-4" />
-                {job.applications_count || 0} Applications
+                {applicationsCount} Applications
               </div>
               
               <Button 

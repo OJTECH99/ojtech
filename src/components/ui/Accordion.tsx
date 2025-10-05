@@ -1,21 +1,10 @@
-import React, { Component, createRef, RefObject, ReactNode } from 'react';
-import * as AccordionPrimitive from '@radix-ui/react-accordion';
+import { Component, createRef, RefObject } from 'react';
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Root component
-interface AccordionProps {
-  children: ReactNode;
-  type?: "single" | "multiple";
-  defaultValue?: string | string[];
-  value?: string | string[];
-  onValueChange?: (value: string | string[]) => void;
-  collapsible?: boolean;
-  disabled?: boolean;
-  dir?: "ltr" | "rtl";
-  orientation?: "vertical" | "horizontal";
-}
-
+type AccordionProps = React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Root>;
 export class Accordion extends Component<AccordionProps> {
   render() {
     return <AccordionPrimitive.Root {...this.props} />;
@@ -23,21 +12,21 @@ export class Accordion extends Component<AccordionProps> {
 }
 
 // Item component
-interface AccordionItemProps extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item> {
+type AccordionItemProps = React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item> & {
   forwardedRef?: React.RefObject<HTMLDivElement>;
-}
+};
 
 export class AccordionItem extends Component<AccordionItemProps> {
   private itemRef: RefObject<HTMLDivElement>;
-  
+
   constructor(props: AccordionItemProps) {
     super(props);
     this.itemRef = props.forwardedRef || createRef<HTMLDivElement>();
   }
-  
+
   render() {
     const { className, forwardedRef, ...props } = this.props;
-    
+
     return (
       <AccordionPrimitive.Item
         ref={this.itemRef}

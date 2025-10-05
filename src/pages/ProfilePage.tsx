@@ -1,18 +1,13 @@
-import React, { Component, ChangeEvent, createRef } from 'react';
+import React, { Component } from 'react';
 import axios from 'axios';
-import { Button } from '../components/ui/Button';
-import { Card } from '../components/ui/Card';
-import { Input } from '../components/ui/Input';
-import { Label } from '../components/ui/Label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/Tabs';
+import { Button } from '../components/ui/button';
+import { Card } from '../components/ui/card';
 import { AuthContext } from '../providers/AuthProvider';
-import { Loader2, Upload, Download, Github, Linkedin, Globe, Pencil, Code, FileUp, Mail, Phone, FileText, Eye, Calendar, Star, GitFork, ExternalLink } from 'lucide-react';
+import { Loader2, Upload, Download, Github, Linkedin, Globe, Pencil, Mail, Phone, FileText, Eye, Calendar, Star, GitFork, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import EducationEditModal from '../components/profile/EducationEditModal';
-import { useToast } from '../components/ui/use-toast';
 import { ToastContext } from '../providers/ToastContext';
-import { ToastProps } from '../components/ui/use-toast';
-import { toast } from '../components/ui/toast-utils';
+import { ToastProps, useToast } from '../components/ui/use-toast';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
 import EmployerProfileEditModal from '../components/profile/EmployerProfileEditModal';
 import PDFViewer from '../components/pdf/PDFViewer';
@@ -788,12 +783,7 @@ const EmployerProfileDisplay: React.FC<{ profile: EmployerProfileData, email: st
 );
 
 // Create a toast wrapper component to use hooks in class component
-const withToast = (WrappedComponent: typeof Component) => {
-  return function WithToastWrapper(props: any) {
-    const { toast } = useToast();
-    return <WrappedComponent {...props} toast={toast} />;
-  };
-};
+
 
 export class ProfilePage extends Component<ProfilePageProps, ProfilePageState> {
   declare context: AuthContextType;
@@ -2298,7 +2288,6 @@ export class ProfilePage extends Component<ProfilePageProps, ProfilePageState> {
               certifications: studentProfile.certifications || [],
               experiences: studentProfile.experiences || [],
               preojtOrientationUrl: studentProfile.preojtOrientationUrl || '',
-              activeCvId: studentProfile.activeCvId || ''
             }}
           />
         )}

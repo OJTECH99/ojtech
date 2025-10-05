@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { Briefcase, Calendar, Building } from "lucide-react";
 
 interface ApplicationCardProps {
@@ -59,7 +59,7 @@ export class ApplicationCard extends Component<ApplicationCardProps, Application
       lastUpdated, 
       onViewDetails 
     } = this.props;
-    const { isExpanded } = this.state;
+    
     
     return (
       <div className="bg-card rounded-lg shadow overflow-hidden border border-border">

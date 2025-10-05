@@ -1,6 +1,8 @@
 import React, { Component, createContext } from 'react';
-import type { ToastActionElement, ToasterToastProps } from '../components/ui/Toast';
+import type { ToasterToastProps } from '../components/ui/Toast';
 import { setToastFunction } from '../components/ui/toast-utils';
+
+export type ToastActionElement = React.ReactElement<any>;
 
 // Constants
 const TOAST_LIMIT = 1;
@@ -93,8 +95,11 @@ export class ToastProvider extends Component<ToastProviderProps, ToastProviderSt
     
     // Register the toast function with the toast-utils
     setToastFunction((props) => {
+      // props comes from ToastProps where action is ReactNode; our context expects a
+      // specific ToastAction element type. To keep types safe, omit unknown action.
+      const { action: _ignoredAction, ...rest } = props as any;
       this.toast({
-        ...props,
+        ...(rest as Omit<ToasterToast, 'id' | 'action'>),
         // Ensure open is true by default
         open: true,
       });
@@ -249,11 +254,12 @@ export class ToastConsumer extends Component<ToastConsumerProps> {
 export class ToastHelper extends Component {
   static contextType = ToastContext;
   static currentContext: ToastContextValue | null = null;
+  static toast: (props: Omit<ToasterToast, 'id'>) => { id: string; dismiss: () => void; update: (props: ToasterToast) => void };
+  static dismiss: (toastId?: string) => void;
   
   // Update the context reference when the component mounts
   componentDidMount() {
     ToastHelper.currentContext = this.context as ToastContextValue;
-   
   }
   
   // Update the context reference when the context changes

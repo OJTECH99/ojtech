@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
+import type React from 'react';
 import { ToastContext } from '../../providers/ToastContext';
 import {
   Toast,
@@ -8,9 +9,11 @@ import {
   ToastTitle,
   ToastViewport,
 } from '../../components/ui/Toast';
+import type { ToasterToastProps } from '../../components/ui/Toast';
 
 export class Toaster extends Component {
   static contextType = ToastContext;
+  declare context: React.ContextType<typeof ToastContext>;
   
   render() {
     const toastHelpers = this.context;
@@ -21,7 +24,9 @@ export class Toaster extends Component {
     
     return (
           <ToastProvider>
-        {toastHelpers.toasts.map(({ id, title, description, action, ...props }) => (
+        {toastHelpers.toasts.map((t: ToasterToastProps) => {
+              const { id, title, description, action, ...props } = t;
+              return (
               <Toast key={id} {...props}>
                 <div className="grid gap-1">
                   {title && <ToastTitle>{title}</ToastTitle>}
@@ -32,9 +37,10 @@ export class Toaster extends Component {
                 {action}
                 <ToastClose />
               </Toast>
-            ))}
+              );
+            })}
             <ToastViewport />
           </ToastProvider>
     );
   }
-} 
+}

@@ -1,4 +1,4 @@
-import React, { Component, createRef, RefObject, ReactNode } from 'react';
+import { Component, createRef, RefObject, ReactNode } from 'react';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 import { cn } from '@/lib/utils';
 

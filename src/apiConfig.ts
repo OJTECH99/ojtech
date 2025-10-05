@@ -1,9 +1,8 @@
+/// <reference types="vite/client" />
 
 // This file configures the API URL for the application
 // Use environment variable with fallback
-export const API_BASE_URL = import.meta.env.VITE_API_URL;
+export const API_BASE_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
-// Remove trailing slash if present
-export const normalizedApiBaseUrl = API_BASE_URL.endsWith('/')
-  ? API_BASE_URL.slice(0, -1)
-  : API_BASE_URL;
+// Normalize the API base URL to remove trailing slashes
+export const normalizedApiBaseUrl: string = (API_BASE_URL || '').replace(/\/+$/, '');

@@ -1,8 +1,8 @@
 import React, { Component } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "../../components/ui/Table";
-import { Skeleton } from "../../components/ui/Skeleton";
+import { Skeleton } from "../../components/ui/skeleton";
 import { UserCheck, UserX, Search, Briefcase, UserCircle, Plus } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { AuthContext } from "../../providers/AuthProvider";

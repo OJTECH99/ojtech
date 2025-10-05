@@ -1,6 +1,4 @@
-import React, { Component } from 'react';
-import * as SeparatorPrimitive from '@radix-ui/react-separator';
-import { cn } from '../../lib/utils';
+import { Component } from 'react';
 
 class Separator extends Component<any, any> {
   render() {

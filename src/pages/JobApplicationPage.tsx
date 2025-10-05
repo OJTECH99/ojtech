@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../providers/AuthProvider';
-import { Button } from '../components/ui/Button';
+import { Button } from '../components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import VerificationBanner from '../components/student/VerificationBanner';
 

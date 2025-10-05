@@ -1,15 +1,16 @@
 import React, { Component } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../providers/AuthProvider';
-import { Button } from '../components/ui/Button';
-import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/button';
+import { Card } from '../components/ui/card';
 import { Spinner } from '../components/ui/Spinner';
-import { Table } from '../components/ui/Table';
-import { Badge } from '../components/ui/Badge';
-import { ApplicationCard } from '../components/ui/ApplicationCard';
-import { toast } from '../components/ui/toast-utils';
+import { Badge } from '../components/ui/badge';
 import jobApplicationService from '../lib/api/jobApplicationService';
 import authService from '../lib/api/authService';
+
+const Table = ({ className, children }: { className?: string; children: React.ReactNode }) => (
+  <table className={className}>{children}</table>
+);
 
 interface Application {
   id: string;
@@ -424,19 +425,18 @@ export class TrackApplicationsPage extends Component<{}, TrackApplicationsPageSt
                         <th className="text-left py-3 px-4">Skills</th>
                         <th className="text-left py-3 px-4">Match Score</th>
                         <th className="text-left py-3 px-4">Last Updated</th>
-                        <th className="text-left py-3 px-4"></th>
+                        <th className="text-left py-3 px-4">Actions</th>
+                        <th className="text-left py-3 px-4">View Job</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredApplications.map(application => {
-                        const companyInitial = application.jobTitle.charAt(0);
                         return (
                           <tr key={application.id} className="border-b border-gray-800">
                             <td className="py-3 px-4 font-medium">{application.jobTitle}</td>
                             <td className="py-3 px-4 text-gray-400">{this.formatDate(application.appliedAt)}</td>
                             <td className="py-3 px-4">
                               <Badge variant={application.status === 'ACCEPTED' ? 'default' : 
-                                           application.status === 'REJECTED' ? 'destructive' : 
                                            application.status === 'INTERVIEW' ? 'secondary' : 'outline'} 
                                    className={`capitalize ${
                                      application.status === 'ACCEPTED' ? 'bg-green-500' : 

@@ -1,26 +1,17 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import * as ToggleGroupPrimitive from '@radix-ui/react-toggle-group';
-import { type VariantProps } from 'class-variance-authority';
-import { cn } from '../../lib/utils';
-import { toggleVariants } from '../../components/ui/toggle';
 
-class ToggleGroup extends Component<any, any> {
+// Root wrapper
+export class ToggleGroup extends Component<React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Root>> {
   render() {
-    return (
-    <ToggleGroupPrimitive.Item
-      ref={ref}
-      className={cn(
-        toggleVariants({
-          variant: context.variant || variant,
-          size: context.size || size,
-        }),
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </ToggleGroupPrimitive.Item>
-  );
+    return <ToggleGroupPrimitive.Root {...this.props} />;
+  }
+}
+
+// Item wrapper
+export class ToggleGroupItem extends Component<React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Item>> {
+  render() {
+    return <ToggleGroupPrimitive.Item {...this.props} />;
   }
 }
 

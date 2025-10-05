@@ -1,4 +1,4 @@
-import React, { Component, FormEvent } from 'react';
+import  { Component, FormEvent } from 'react';
 import { Certification } from './CertificationsStep';
 import { WorkExperience } from './ExperiencesStep';
 
