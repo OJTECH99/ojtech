@@ -1,66 +1,356 @@
-# Render Blueprint for OJTech API
-# This file can be used to set up services on Render automatically
+# ============================================================
+# Render Blueprint for OJTech Backend API
+# ============================================================
+# This file automates the deployment of the Spring Boot backend
+# to Render using Docker.
+#
+# IMPORTANT: Database is hosted externally on Supabase.
+# You must manually configure sensitive credentials in Render Dashboard.
+# ============================================================
 
 services:
-  # PostgreSQL Database
-  - type: pserv
-    name: ojtech-db
-    plan: starter
-    region: oregon
-    databaseName: ojtech_db
-    databaseUser: ojtech_user
-    ipAllowList: []
-
-  # Spring Boot API
+  # OJTech Spring Boot Backend
   - type: web
-    name: ojtech-api
-    runtime: java
-    region: oregon
-    plan: starter
-    buildCommand: cd JavaSpringBootOAuth2JwtCrud && ./mvnw clean package -DskipTests
-    startCommand: cd JavaSpringBootOAuth2JwtCrud && java -jar target/ojtech-api-0.0.1-SNAPSHOT.jar
-    envVars:
-      - key: SPRING_PROFILES_ACTIVE
-        value: prod
-      
-      - key: DATABASE_URL
-        fromDatabase:
-          name: ojtech-db
-          property: connectionString
-      
-      - key: DB_USERNAME
-        fromDatabase:
-          name: ojtech-db
-          property: user
-      
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: ojtech-db
-          property: password
-      
-      - key: PORT
-        value: 8081
-      
-      - key: JWT_SECRET
-        generateValue: true
-      
-      - key: JWT_EXPIRATION
-        value: 86400000
-      
-      # You'll need to add these manually in Render dashboard:
-      # - GOOGLE_CLIENT_ID
-      # - GOOGLE_CLIENT_SECRET
-      # - GITHUB_CLIENT_ID
-      # - GITHUB_CLIENT_SECRET
-      # - CLOUDINARY_CLOUD_NAME
-      # - CLOUDINARY_API_KEY
-      # - CLOUDINARY_API_SECRET
-      # - GEMINI_API_KEY
-      # - EMAIL_USERNAME
-      # - EMAIL_PASSWORD
-      # - FRONTEND_URL
-      # - BACKEND_BASE_URL
+    name: ojtech-backend
+    runtime: docker
     
+    # Repository Configuration
+    branch: main
+    
+    # Docker Configuration
+    dockerfilePath: ./JavaSpringBootOAuth2JwtCrud/Dockerfile
+    dockerContext: ./JavaSpringBootOAuth2JwtCrud
+    
+    # Deployment Region
+    region: singapore
+    
+    # Instance Plan
+    plan: free  # Options: free, starter ($7/mo), standard ($25/mo)
+    # Note: Free tier spins down after 15min inactivity, upgrade to 'starter' for 24/7
+    
+    # Health Check Configuration
     healthCheckPath: /actuator/health
     
+    # Auto-deploy on Git push
     autoDeploy: true
+    
+    # Environment Variables
+    envVars:
+      # ========================================
+      # DATABASE CONFIGURATION (Supabase)
+      # ========================================
+      # ⚠️ REQUIRED: Set these in Render Dashboard
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+        # Example: jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres
+      
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+        # Example: postgres.tcudwwqtzvklvnopjpez
+      
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+        # Your Supabase database password
+      
+      - key: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+        value: org.postgresql.Driver
+      
+      # ========================================
+      # JPA/HIBERNATE CONFIGURATION
+      # ========================================
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: validate
+      
+      - key: SPRING_JPA_SHOW_SQL
+        value: false
+      
+      - key: SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL
+        value: false
+      
+      - key: SPRING_JPA_DATABASE_PLATFORM
+        value: org.hibernate.dialect.PostgreSQLDialect
+      
+      - key: SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION
+        value: true
+      
+      - key: SPRING_JPA_HIBERNATE_NAMING_PHYSICAL_STRATEGY
+        value: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+      
+      - key: SPRING_JPA_HIBERNATE_NAMING_IMPLICIT_STRATEGY
+        value: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+      
+      - key: SPRING_JPA_PROPERTIES_HIBERNATE_GLOBALLY_QUOTED_IDENTIFIERS
+        value: false
+      
+      - key: SPRING_SQL_INIT_MODE
+        value: never
+      
+      # ========================================
+      # JWT CONFIGURATION
+      # ========================================
+      - key: APP_JWT_SECRET
+        generateValue: true
+        # Render will auto-generate a secure random secret
+      
+      - key: APP_JWT_EXPIRATION
+        value: 86400000
+      
+      - key: APP_JWT_HEADER
+        value: Authorization
+      
+      - key: APP_JWT_PREFIX
+        value: "Bearer "
+      
+      # ========================================
+      # OAUTH2 LEGACY CONFIGURATION
+      # ========================================
+      - key: APP_SECURITY_OAUTH2_GRANT_TYPES_PASSWORD
+        value: password
+      
+      - key: APP_SECURITY_OAUTH2_GRANT_TYPES_IMPLICIT
+        value: implicit
+      
+      - key: APP_SECURITY_OAUTH2_GRANT_TYPES_AUTHORIZATION_CODE
+        value: authorization_code
+      
+      - key: APP_SECURITY_OAUTH2_GRANT_TYPES_REFRESH_TOKEN
+        value: refresh_token
+      
+      - key: APP_SECURITY_OAUTH2_ACCESS_TOKEN_VALIDITY_SECONDS
+        value: 2592000
+      
+      - key: APP_SECURITY_OAUTH2_REFRESH_TOKEN_VALIDITY_SECONDS
+        value: 2592000
+      
+      - key: APP_SECURITY_OAUTH2_CLIENT1_ID
+        value: client1
+      
+      - key: APP_SECURITY_OAUTH2_CLIENT1_PASSWORD
+        value: password
+      
+      - key: APP_SECURITY_OAUTH2_CLIENT1_SCOPES
+        value: read,write,trust
+      
+      - key: APP_SECURITY_OAUTH2_CLIENT2_ID
+        value: client2
+      
+      - key: APP_SECURITY_OAUTH2_CLIENT2_PASSWORD
+        value: password
+      
+      - key: APP_SECURITY_OAUTH2_CLIENT2_SCOPES
+        value: read
+      
+      # ========================================
+      # CLOUDINARY CONFIGURATION
+      # ========================================
+      # ⚠️ REQUIRED: Set these in Render Dashboard
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      
+      - key: CLOUDINARY_API_SECRET_PRESET
+        value: OJTECHPDF
+      
+      # ========================================
+      # FILE UPLOAD CONFIGURATION
+      # ========================================
+      - key: SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE
+        value: 10MB
+      
+      - key: SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE
+        value: 10MB
+      
+      - key: FILE_UPLOAD_DIR
+        value: uploads
+      
+      # ========================================
+      # OPENAPI/SWAGGER CONFIGURATION
+      # ========================================
+      - key: SPRINGDOC_API_DOCS_PATH
+        value: /api-docs
+      
+      - key: SPRINGDOC_SWAGGER_UI_PATH
+        value: /swagger-ui.html
+      
+      - key: SPRINGDOC_SWAGGER_UI_OPERATIONSORTER
+        value: method
+      
+      # ========================================
+      # LOGGING CONFIGURATION
+      # ========================================
+      - key: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY
+        value: INFO
+      
+      - key: LOGGING_LEVEL_COM_MELARDEV_SPRING_JWTOAUTH
+        value: INFO
+      
+      # ========================================
+      # GOOGLE OAUTH2 CONFIGURATION
+      # ========================================
+      # ⚠️ REQUIRED: Set these in Render Dashboard
+      - key: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID
+        sync: false
+      
+      - key: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET
+        sync: false
+      
+      - key: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_SCOPE
+        value: email,profile
+      
+      # ========================================
+      # GITHUB OAUTH2 CONFIGURATION
+      # ========================================
+      # ⚠️ REQUIRED: Set these in Render Dashboard
+      - key: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID
+        sync: false
+      
+      - key: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_SECRET
+        sync: false
+      
+      - key: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_SCOPE
+        value: user:email
+      
+      - key: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_REDIRECT_URI
+        value: ${BACKEND_BASE_URL}/auth/github/callback
+      
+      # ========================================
+      # GEMINI API CONFIGURATION
+      # ========================================
+      # ⚠️ REQUIRED: Set this in Render Dashboard
+      - key: GEMINI_API_KEY
+        sync: false
+      
+      # ========================================
+      # EMAIL CONFIGURATION (Gmail SMTP)
+      # ========================================
+      - key: SPRING_MAIL_HOST
+        value: smtp.gmail.com
+      
+      - key: SPRING_MAIL_PORT
+        value: 587
+      
+      # ⚠️ REQUIRED: Set these in Render Dashboard
+      - key: SPRING_MAIL_USERNAME
+        sync: false
+      
+      - key: SPRING_MAIL_PASSWORD
+        sync: false
+        # Use Gmail App Password, not regular password!
+      
+      - key: SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH
+        value: true
+      
+      - key: SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE
+        value: true
+      
+      # ========================================
+      # APPLICATION URLS
+      # ========================================
+      # ⚠️ REQUIRED: Set these in Render Dashboard
+      - key: APP_BASE_URL
+        sync: false
+        # Your frontend URL (e.g., https://ojtech.netlify.app)
+      
+      - key: BACKEND_BASE_URL
+        sync: false
+        # Your Render backend URL (e.g., https://ojtech-backend.onrender.com)
+
+# ============================================================
+# POST-DEPLOYMENT CHECKLIST
+# ============================================================
+# After deploying with this blueprint, you MUST manually configure
+# the following environment variables in Render Dashboard:
+#
+# 1. DATABASE (Supabase):
+#    ✓ SPRING_DATASOURCE_URL
+#    ✓ SPRING_DATASOURCE_USERNAME
+#    ✓ SPRING_DATASOURCE_PASSWORD
+#
+# 2. CLOUDINARY:
+#    ✓ CLOUDINARY_CLOUD_NAME
+#    ✓ CLOUDINARY_API_KEY
+#    ✓ CLOUDINARY_API_SECRET
+#
+# 3. GOOGLE OAUTH2:
+#    ✓ SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID
+#    ✓ SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET
+#
+# 4. GITHUB OAUTH2:
+#    ✓ SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID
+#    ✓ SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_SECRET
+#
+# 5. GEMINI API:
+#    ✓ GEMINI_API_KEY
+#
+# 6. EMAIL (Gmail):
+#    ✓ SPRING_MAIL_USERNAME
+#    ✓ SPRING_MAIL_PASSWORD (use Gmail App Password!)
+#
+# 7. APPLICATION URLS:
+#    ✓ APP_BASE_URL (frontend URL)
+#    ✓ BACKEND_BASE_URL (backend URL after deployment)
+#
+# ============================================================
+# DEPLOYMENT INSTRUCTIONS
+# ============================================================
+#
+# Option 1: Deploy via Render Blueprint
+# --------------------------------------
+# 1. Go to https://dashboard.render.com
+# 2. Click "New" → "Blueprint"
+# 3. Connect your GitHub repository
+# 4. Render will detect this render.yaml file
+# 5. Review and approve the configuration
+# 6. Click "Apply" to create the service
+# 7. Manually add the required environment variables (see checklist above)
+#
+# Option 2: Deploy via Manual Web Service Setup
+# ----------------------------------------------
+# 1. Go to https://dashboard.render.com
+# 2. Click "New" → "Web Service"
+# 3. Connect your GitHub repository
+# 4. Configure manually:
+#    - Name: ojtech-backend
+#    - Runtime: Docker
+#    - Region: Singapore
+#    - Branch: main
+#    - Root Directory: JavaSpringBootOAuth2JwtCrud
+#    - Dockerfile Path: ./Dockerfile (relative to root directory)
+# 5. Add all environment variables from the checklist above
+# 6. Click "Create Web Service"
+#
+# ============================================================
+# IMPORTANT NOTES
+# ============================================================
+# 
+# ✓ JWT_SECRET will be auto-generated securely by Render
+# ✓ Dockerfile is configured to use PORT environment variable
+# ✓ Health checks enabled at /actuator/health
+# ✓ Free tier spins down after 15min inactivity (30s cold start)
+# ✓ Upgrade to 'starter' plan for 24/7 availability
+# ✓ Database is external (Supabase) - no Render PostgreSQL needed
+# ✓ All Spring Boot properties can be overridden via env vars
+#
+# ============================================================
+# TROUBLESHOOTING
+# ============================================================
+#
+# Issue: Build fails
+# Solution: Check Dockerfile path and build logs
+#
+# Issue: App crashes on start
+# Solution: Verify all required env vars are set
+#
+# Issue: Database connection fails
+# Solution: Verify Supabase URL, username, and password
+#
+# Issue: OAuth2 not working
+# Solution: Update redirect URIs in Google/GitHub console
+#
+# For detailed troubleshooting, see RENDER_DEPLOYMENT_GUIDE.md
+# ============================================================
