@@ -8,8 +8,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
-
 @Configuration
 @Profile("test")
 public class TestConfig {
@@ -26,8 +24,21 @@ public class TestConfig {
             }
 
             @Override
+            public Map uploadWithPreset(MultipartFile file, String folder, String preset) throws IOException {
+                Map<String, Object> result = new HashMap<>();
+                result.put("public_id", "test-public-id");
+                result.put("secure_url", "https://example.com/test-file.pdf");
+                return result;
+            }
+
+            @Override
             public String uploadImage(MultipartFile file) throws IOException {
                 return "https://example.com/test-image.jpg";
+            }
+
+            @Override
+            public String uploadPdf(MultipartFile file, String preset) throws IOException {
+                return "https://example.com/test-file.pdf";
             }
 
             @Override
