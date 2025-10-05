@@ -1,149 +1,450 @@
-# OJTech React Frontend
+# Table of Contents
+- [Table of Contents](#table-of-contents)
+- [Introduction](#introduction)
+- [Full-stack Applications](#full-stack-applications)
+  - [E-commerce (shopping cart)](#e-commerce-shopping-cart)
+    - [Server side implementations](#server-side-implementations)
+    - [Client side implementations](#client-side-implementations)
+  - [Blog/CMS](#blogcms)
+    - [Server side implementations](#server-side-implementations-1)
+    - [Client side](#client-side)
+      - [The next come are](#the-next-come-are)
+  - [Simple CRUD(Create, Read, Update, Delete)](#simple-crudcreate-read-update-delete)
+    - [Server side implementations](#server-side-implementations-2)
+    - [Client side implementations](#client-side-implementations-1)
+      - [The next come are](#the-next-come-are-1)
+  - [CRUD + Pagination](#crud--pagination)
+    - [Server side implementations](#server-side-implementations-3)
+      - [The next come are](#the-next-come-are-2)
+    - [Client side implementations](#client-side-implementations-2)
+      - [The next come are](#the-next-come-are-3)
+- [Social media links](#social-media-links)
+- [Commands used to build the project](#commands-used-to-build-the-project)
+- [Follow me](#follow-me)
+    
+# Introduction
+An API sample showing how to create a basic Rest API and implement the CRUD operations
+using Spring Security OAuth2 with JWT. First you have to obtain a JWT, you can go either to /oauth/token
+or to /auth/login, providing client_username:client_password form for http basic authentication as well as post body with username and
+password.
+Example: POST client1:password@localhost:8080/auth/login
+With client1:password as the client credentials. And {"username": "admin": "password":"password"} in the post Body.
+For more details and other examples look at the postman_collection.json file attached with this repo
 
-This is the React frontend for the OJTech platform, built with Vite, React, and TypeScript.
+# What you will learn:
+- Spring Boot
+- Spring Data
+- Spring Security
+- Spring Security OAuth2 + JWT
+- Hql
+- Pagination
+- Sorting
+- Full CRUD
+- Customizing Jackson JSON responses and strategies.
+- H2 integration
+- Seeding data with Faker
+- Organizing applications
 
-## Setup
 
-1. Clone the repository
-2. Navigate to the project directory:
-   ```
-   cd ojtech-vite
-   ```
-3. Install dependencies:
-   ```
-   npm install
-   ```
-4. Create a `.env.local` file in the root directory with the following content:
-   ```
-   # API Base URL
-   VITE_API_BASE_URL=http://localhost:8080/api
+# Full-stack Applications
+## Simple Crud
+### Server side implementations
+- [Python Django + Rest Framework](https://github.com/melardev/DjangoRestFrameworkCrud)
+- [Python Django](https://github.com/melardev/DjanogApiCrud)
+- [Python Flask](https://github.com/melardev/FlaskApiCrud)
+- [Asp.Net Core](https://github.com/melardev/AspNetCoreApiCrud)
+- [Asp.Net Core + MediatR](https://github.com/melardev/AspNetCoreApiCrudMediatR)
+- [Asp.Net Core + NHibernate](https://github.com/melardev/.NetCoreApiNHibernateCrud)
+- [Asp.Net Core + ADO.Net](https://github.com/melardev/.NetCoreApiADO.NetCrud)
+- [Asp.Net Core + Dapper](https://github.com/melardev/.NetCoreApiDapperCrud)
+- [Asp.Net Web Api 2](https://github.com/melardev/AspNetWebApiCrud)
+- [Asp.Net Web Api 2 + NHibernate](https://github.com/melardev/.NetWebApiNHibernateCrud)
+- [Asp.Net Web Api 2 + ADO.Net](https://github.com/melardev/.NetWebApiADO.NetCrud)
+- [Asp.Net Web Api 2 + Autofac](https://github.com/melardev/.NetWebApiAutofac)
+- [Asp.Net Web Api 2 + Dapper](https://github.com/melardev/.NetWebApiDapperCrud)
+- [Laravel](https://github.com/melardev/LaravelApiCrud)
+- [Ruby On Rails](https://github.com/melardev/RailsApiCrud)
+- [Ruby On Rails + JBuilder](https://github.com/melardev/RailsApiJBuilderCrud)
+- [Spring Boot + Spring Data JPA](https://github.com/melardev/SpringBootApiJpaCrud)
+- [Spring Boot + Spring Data MonoDb](https://github.com/melardev/JavaSpringBootApiMongoCrud)
+- [Spring Boot + Reactive Spring Data MonoDb + Basic Auth](https://github.com/melardev/JavaSpringBootRxApiRxMongoRxHttpBasicCrud)
+- [Kotlin Spring Boot + Reactive Spring Data MonoDb + Basic Auth](https://github.com/melardev/KotlinSpringBootRxApiRxMongoRxHttpBasicCrud)
+- [Kotlin Spring Boot + Spring Data MonoDb](https://github.com/melardev/KotlinSpringBootApiMongoCrud)
+- [Kotlin Spring Boot + Spring Data JPA](https://github.com/melardev/KotlinSpringBootApiJpaCrud)
+- [Spring Boot + JAX-RS(Jersey) + Spring Data JPA](https://github.com/melardev/SpringBootApiJerseySpringDataCrud)
+- [Spring Boot Reactive + MongoDB Reactive](https://github.com/melardev/SpringBootApiReactiveMongoCrud)
+- [Kotlin Spring Boot Reactive + MongoDB Reactive](https://github.com/melardev/KotlinSpringBootRxApiRxMongoCrud)
+- [Java Spring Boot Web Reactive + Spring Data](https://github.com/melardev/JavaSpringBootApiRxHybridCrud)
+- [Kotlin Spring Boot Web Reactive + Spring Data](https://github.com/melardev/KotlinSpringBootApiRxHybridCrud)
+- [Go + GORM](https://github.com/melardev/GoGormApiCrud)
+- [Go + GinGonic + GORM](https://github.com/melardev/GoGinGonicApiGormCrud)
+- [Go + Gorilla + GORM](https://github.com/melardev/GoMuxGormApiCrud)
+- [Go + Beego(Web and ORM)](https://github.com/melardev/GoBeegoApiCrud)
+- [Go + Beego + GORM](https://github.com/melardev/GoBeegoGormApiCrud)
+- [Express.JS + Sequelize ORM](https://github.com/melardev/ExpressSequelizeApiCrud)
+- [Express.JS + BookShelf ORM](https://github.com/melardev/ExpressBookshelfApiCrud)
+- [Express.JS + Mongoose](https://github.com/melardev/ExpressMongooseApiCrud)
 
-   # Gemini AI API Configuration
-   VITE_GEMINI_API_URL=https://generativelanguage.googleapis.com/v1beta
-   VITE_GEMINI_API_KEY=your-gemini-api-key-here
-   ```
+#### Microservices
+- [Java Spring Boot Zuul + Rest](https://github.com/melardev/JavaSpringBootZuulRestApiCrud)
+- [Kotlin Spring Boot Zuul + Rest](https://github.com/melardev/KotlinSpringBootZuulRestApiCrud)
+- [Java Spring Cloud Eureka + Gateway + EurekaClient Proxy + Rest](https://github.com/melardev/Java_SpringCloud_Eureka_Gateway_EurekaProxy_RestCrud)
+- [Java Spring Cloud Eureka + Gateway + LoadBalancedRest Proxy + Rest](https://github.com/melardev/Java_SpringCloud_Eureka_Gateway_LBRestProxy_RestCrud)
+- [Java Spring Cloud Eureka + Gateway + Cloud Stream RabbitMQ + Admin + Rest](https://github.com/melardev/Java_SpringCloud_Eureka_Gateway_CloudStreamRabbitMQ_Admin_RestCrud)
+- [Java Spring Cloud Eureka + Gateway + Config + Rest Swagger](https://github.com/melardev/Java_SpringCloud_Eureka_Gateway_Config_RestSwaggerCrud)
+- [Java Spring Cloud Eureka + Gateway + Admin + Cloud Stream RabbitMQ + RxProxy + RxRest](https://github.com/melardev/Java_SpringCloud_Eureka_Gateway_Admin_CloudStreamRabbitMQ_RxProxy_RxRestCrud)
+- [Java Spring Cloud Eureka + Gateway + Webflux + RxMongoDB + Rx Proxy with WebClient](https://github.com/melardev/Java_SpringCloud_Eureka_Gateway_RxWeb_RxMongoDb_RxProxy)
+- [Java Spring Cloud Eureka + Zuul + Config + Kafka + Rest](https://github.com/melardev/Java_SpringCloud_Eureka_Zuul_Config_Kafka_RestCrud)
+- [Java Spring Cloud Eureka + Zuul + Config + Hystrix + Turbine + Feign + Rest](https://github.com/melardev/Java_SpringCloud_Eureka_Zuul_Config_Hystrix_Turbine_Feign_RestCrud)
+- [Java Spring Cloud Eureka + Zuul + Feign + Sleuth + Zipkin + Rest](https://github.com/melardev/Java_SpringCloud_Eureka_Zuul_Feign_Sleuth_Zipkin_RestCrud)
+- [Java Spring Cloud Eureka + Zuul + Admin + Rest](https://github.com/melardev/Java_SpringCloud_Eureka_Zuul_Admin_RestCrud)
+- [Java Spring Cloud Eureka + Gateway + Config + Cloud Bus RabbitMQ + Rest](https://github.com/melardev/Java_SpringCloud_Eureka_Gateway_Config_CloudBusRabbitMQ_RestCrud)
+- [Java Spring Cloud Eureka + Zuul + Rest + LoadBalancer Proxy](https://github.com/melardev/Java_SpringCloud_Eureka_Zuul_LoadBalancerProxy_RestCrud)
+- [Java Spring Cloud Eureka + Config Server + Zuul + Kafka + Discovery Client Proxy + Rest](https://github.com/melardev/Java_SpringCloud_Eureka_Zuul_Config_Kafka_ProxyDiscovery_RestCrud)
 
-   > **Note:** You need to obtain a Gemini API key from Google AI Studio (https://makersuite.google.com/app/apikey) and replace `your-gemini-api-key-here` with your actual API key.
+### Client side implementations
+- [React](https://github.com/melardev/ReactCrudAsync)
+- [React + Redux](https://github.com/melardev/ReactReduxAsyncCrud)
+- [Angular](https://github.com/melardev/AngularApiCrud)
+- [Vue](https://github.com/melardev/VueAsyncCrud)
+- [Vue + Vuex](https://github.com/melardev/VueVuexAsyncCrud)
 
-5. Start the development server:
-   ```
-   npm run dev
-   ```
+#### The next come are
+- Angular NgRx-Store
+- Angular + Material
+- React + Material
+- React + Redux + Material
+- Vue + Material
+- Vue + Vuex + Material
+- Ember
+- Vanilla javascript
+
+## Crud + Pagination
+### Server side implementations
+- [AspNet Core](https://github.com/melardev/AspNetCoreApiPaginatedCrud)
+- [Asp.Net Core + NHibernate](https://github.com/melardev/.NetCoreApiNHibernateCrudPagination)
+- [Asp.Net Core + MediatR](https://github.com/melardev/AspNetCoreApiPaginatedCrudMediatR)
+- [Asp.Net Core + ADO.Net](https://github.com/melardev/.NetCoreApiADO.NetCrudPagination)
+- [Asp.Net Core + Dapper](https://github.com/melardev/.NetCoreApiDapperCrudPagignation)
+- [Asp.Net Web Api 2](https://github.com/melardev/WebApiPaginatedAsyncCrud)
+- [Asp.Net Web Api 2 + NHibernate](https://github.com/melardev/.NetWebApiNHibernateCrudPagination)
+- [Asp.Net Web Api 2 + ADO.Net](https://github.com/melardev/.NetWebApiADO.NetCrudPagination)
+- [Asp.Net Web Api 2 + Autofac](https://github.com/melardev/.NetWebApiAutofacPagination)
+- [Asp.Net Web Api 2 + Dapper](https://github.com/melardev/.NetWebApiDapperCrudPagination)
+- [Spring Boot + Spring Data + Jersey](https://github.com/melardev/SpringBootJerseyApiPaginatedCrud)
+- [Spring Boot + Spring Data](https://github.com/melardev/SpringBootApiJpaPaginatedCrud)
+- [Spring Boot + Spring Data MonoDb](https://github.com/melardev/JavaSpringBootApiMongoCrudPagination)
+- [Kotlin Spring Boot + Spring Data MonoDb](https://github.com/melardev/KotlinSpringBootApiMongoCrudPagination)
+- [Spring Boot Reactive + Spring Data Reactive](https://github.com/melardev/ApiCrudReactiveMongo)
+- [Java Spring Boot Web Reactive + Spring Data](https://github.com/melardev/JavaSpringBootApiRxHybridCrudPagination)
+- [Kotlin Spring Boot Reactive + MongoDB Reactive](https://github.com/melardev/KotlinSpringBootRxApiRxMongoCrudPagination)
+- [Kotlin Spring Boot Web Reactive + Spring Data](https://github.com/melardev/KotlinSpringBootApiRxHybridCrudPagination)
+- [Spring Boot + Reactive Spring Data MonoDb + Basic Auth](https://github.com/melardev/JavaSpringBootRxApiRxMongoRxHttpBasicCrudPagination)
+- [Kotlin Spring Boot + Reactive Spring Data MonoDb + Basic Auth](https://github.com/melardev/KotlinSpringBootRxApiRxMongoRxHttpBasicCrudPagination)
+- [Go + GORM](https://github.com/melardev/GoGormApiCrudPagination)
+- [Go + Gin Gonic + GORM](https://github.com/melardev/GoGinGonicApiPaginatedCrud)
+- [Go + Gorilla + GORM](https://github.com/melardev/GoMuxGormApiCrudPagination)
+- [Go + Beego(Web and ORM)](https://github.com/melardev/GoBeegoApiCrudPagination)
+- [Go + Beego(Web) + GORM)](https://github.com/melardev/GoBeegoGormApiCrudPagination)
+- [Laravel](https://github.com/melardev/LaravelApiPaginatedCrud)
+- [Rails + JBuilder](https://github.com/melardev/RailsJBuilderApiPaginatedCrud)
+- [Rails](https://github.com/melardev/RailsApiPaginatedCrud)
+- [NodeJs Express + Sequelize](https://github.com/melardev/ExpressSequelizeApiPaginatedCrud)
+- [NodeJs Express + Bookshelf](https://github.com/melardev/ExpressBookshelfApiPaginatedCrud)
+- [NodeJs Express + Mongoose](https://github.com/melardev/ExpressApiMongoosePaginatedCrud)
+- [Python Django](https://github.com/melardev/DjangoApiCrudPaginated)
+- [Python Django + Rest Framework](https://github.com/melardev/DjangoRestFrameworkPaginatedCrud)
+- [Python Flask](https://github.com/melardev/FlaskApiPaginatedCrud)
+
+
+#### MicroServices
+- [Java Spring Boot Zuul + Rest](https://github.com/melardev/JavaSpringBootZuulRestApiPaginatedCrud)
+- [Kotlin Spring Boot Zuul + Rest](https://github.com/melardev/KotlinSpringBootZuulRestApiPaginatedCrud)
+
+#### The next come are
+- NodeJs Express + Knex
+- Flask + Flask-Restful
+- Laravel + Fractal
+- Laravel + ApiResources
+- Go with Mux
+- AspNet Web Api 2
+- Jersey
+- Elixir
+
+### Client side implementations
+- [Angular](https://github.com/melardev/AngularPaginatedAsyncCrud)
+- [React-Redux](https://github.com/melardev/ReactReduxPaginatedAsyncCrud)
+- [React](https://github.com/melardev/ReactAsyncPaginatedCrud)
+- [Vue + Vuex](https://github.com/melardev/VueVuexPaginatedAsyncCrud)
+- [Vue](https://github.com/melardev/VuePaginatedAsyncCrud)
+
+
+#### The next come are
+- Angular NgRx-Store
+- Angular + Material
+- React + Material
+- React + Redux + Material
+- Vue + Material
+- Vue + Vuex + Material
+- Ember
+- Vanilla javascript
+
+
+## Auth Jwt + Crud
+### Server side implementations
+- [Spring Boot](https://github.com/melardev/JavaSpringBootJwtCrudPagination)
+- [Spring Boot + OAuth with JWT](https://github.com/melardev/JavaSpringBootOAuth2JwtCrud)
+
+## Auth Jwt + Crud + Pagination
+### Server side implementations
+- [Spring Boot](https://github.com/melardev/JavaSpringBootJwtCrudPagination)
+- [Spring Boot + OAuth with JWT](https://github.com/melardev/JavaSpringBootOAuth2JwtCrudPagination)
+
+### Client side implementations
+
+
+## E-commerce
+### Server side implementations
+- [Spring Boot + Spring Data Hibernate](https://github.com/melardev/SBootApiEcomMVCHibernate)
+- [Spring Boot + JAX-RS Jersey + Spring Data Hibernate](https://github.com/melardev/SpringBootEcommerceApiJersey)
+- [Node Js + Sequelize](https://github.com/melardev/ApiEcomSequelizeExpress)
+- [Node Js + Bookshelf](https://github.com/melardev/ApiEcomBookshelfExpress)
+- [Node Js + Mongoose](https://github.com/melardev/ApiEcomMongooseExpress)
+- [Python Django](https://github.com/melardev/DjangoRestShopApy)
+- [Flask](https://github.com/melardev/FlaskApiEcommerce)
+- [Golang go gonic](https://github.com/melardev/api_shop_gonic)
+- [Ruby on Rails](https://github.com/melardev/RailsApiEcommerce)
+- [AspNet Core](https://github.com/melardev/ApiAspCoreEcommerce)
+- [Laravel](https://github.com/melardev/ApiEcommerceLaravel)
+
+The next to come are:
+- Spring Boot + Spring Data Hibernate + Kotlin
+- Spring Boot + Jax-RS Jersey + Hibernate + Kotlin
+- Spring Boot + mybatis
+- Spring Boot + mybatis + Kotlin
+- Asp.Net Web Api v2
+- Elixir
+- Golang + Beego
+- Golang + Iris
+- Golang + Echo
+- Golang + Mux
+- Golang + Revel
+- Golang + Kit
+- Flask + Flask-Restful
+- AspNetCore + NHibernate
+- AspNetCore + Dapper
+
+### Client side implementations
+This client side E-commerce application is also implemented using other client side technologies:
+- [React Redux](https://github.com/melardev/ReactReduxEcommerceRestApi)
+- [React](https://github.com/melardev/ReactEcommerceRestApi)
+- [Vue](https://github.com/melardev/VueEcommerceRestApi)
+- [Vue + Vuex](https://github.com/melardev/VueVuexEcommerceRestApi)
+- [Angular](https://github.com/melardev/AngularEcommerceRestApi)
+
+## Blog/CMS
+### Server side implementations
+### Client side
+#### The next come are
+- Angular NgRx-Store
+- Angular + Material
+- React + Material
+- React + Redux + Material
+- Vue + Material
+- Vue + Vuex + Material
+- Ember
+
+# Social media links
+- [Youtube Channel](https://youtube.com/melardev) I publish videos mainly on programming
+- [Blog](http://melardev.com) Sometimes I publish the source code there before Github
+- [Twitter](https://twitter.com/@melardev) I share tips on programming
+- [Instagram](https://instagram.com/melar_dev) I share from time to time nice banners
+
+# OJTech API - Spring Boot with JWT Authentication
+
+A comprehensive Spring Boot API for the OJTech job matching platform. This API provides user authentication, profile management, job posting and application features.
 
 ## Features
 
-### Resume Generation
-The application includes an AI-powered resume generator that creates ATS-optimized resumes based on your profile information. This feature:
-
-- Uses Google's Gemini AI API directly from the frontend
-- Generates professionally formatted resume content optimized for ATS systems
-- Follows best practices from the Tech Interview Handbook
-- Allows downloading as PDF
-
-#### Resume Generation Flow
-1. User completes their profile with education, experience, skills, etc.
-2. User clicks "Generate Resume" button on the Resume Management page
-3. Frontend calls Gemini API directly with optimized prompt
-4. Resume JSON is saved to the backend database
-5. Resume is displayed to the user in a clean, formatted layout
-6. User can download as PDF or view the raw JSON
-
-## Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| VITE_API_BASE_URL | The base URL for the backend API (default: http://localhost:8080/api) |
-| VITE_GEMINI_API_URL | The URL for the Gemini API (default: https://generativelanguage.googleapis.com/v1beta) |
-| VITE_GEMINI_API_KEY | Your Gemini API key (required for resume generation) |
-
-## Development Notes
-
-- The project uses class components for all React components
-- The frontend now handles the AI integration directly, communicating with Gemini API
-- The backend only stores and retrieves the resume data
+- **User Authentication**: JWT-based with role support (Student, Employer, Admin)
+- **Profile Management**: Create and update profiles for both students and employers
+- **File Upload**: CV and company logo uploads with Cloudinary support
+- **Job Management**: Post, search, and apply for jobs
+- **Application Tracking**: Track and update job application status
 
 ## Technology Stack
 
-- **React**: Frontend library
-- **Vite**: Build tool and development server
-- **TypeScript**: Type safety for JavaScript
-- **React Router**: Client-side routing
-- **Tailwind CSS**: Utility-first CSS framework
-- **Axios**: HTTP client for API requests
-- **Spring Boot API**: Backend RESTful API
+- **Framework**: Spring Boot 3.x
+- **Security**: Spring Security with JWT
+- **Database**: H2 (Development), PostgreSQL (Production)
+- **ORM**: Spring Data JPA
+- **File Storage**: Cloudinary integration (with local fallback)
+- **Documentation**: OpenAPI/Swagger
+- **Testing**: JUnit 5, Spring Test
 
-## Key Features
+## Project Structure
 
-- User authentication and authorization
-- Job opportunity discovery and application
-- Resume upload and parsing
-- Profile management for students and employers
-- Job posting management for employers
-
-## Architecture
-
-The application follows a class component architecture, making use of React's context API for state management. Key patterns:
-
-- **Class Components**: Most components are implemented as ES6 classes extending React.Component
-- **Context API**: Used for global state like auth context
-- **HOC Pattern**: Used for protected routes and authentication wrappers
-- **API Service Layer**: Clean separation of API calls in dedicated service modules
-
-## Pages Migrated from Next.js
-
-The following pages have been migrated from the Next.js application:
-
-1. **HomePage**: Landing page with feature overview
-2. **OpportunitiesPage**: Job opportunities with swipe interface
-3. **JobDetailPage**: Detailed job information
-4. **JobApplicationPage**: Application form for jobs
-5. **ProfilePage**: User profile management
-
-## Spring Boot API Integration
-
-The application integrates with a Spring Boot backend API. Key integration points:
-
-- **Authentication**: JWT-based authentication
-- **Job Matching**: AI-powered job matching algorithms
-- **Profile Management**: Student and employer profile handling
-- **Resume Parsing**: CV upload and parsing capabilities
-- **Application Tracking**: Job application status tracking
-
-## Development
-
-To run the application in development mode:
-
-```bash
-npm install
-npm run dev
+```
+com.melardev.spring.jwtoauth
+├── config                 # Configuration classes
+├── controller             # API endpoint controllers
+├── dao                    # Data access objects (redundant with repositories)
+├── dtos                   # Data Transfer Objects
+│   ├── requests           # Request bodies
+│   └── responses          # Response bodies
+├── entities               # Database entities
+├── exceptions             # Custom exceptions
+├── repositories           # Spring Data JPA repositories
+├── security               # Security configuration
+│   ├── jwt                # JWT implementation
+│   └── services           # UserDetails implementations
+├── seeds                  # Database seeders
+└── service                # Business logic services
 ```
 
-## Build
+## API Endpoints
 
-To build the application for production:
+### Authentication
+
+- `POST /api/auth/login`: Authenticate user and get JWT token
+- `POST /api/auth/register`: Register a new user
+- `GET /api/auth/me`: Get current authenticated user
+
+### Profile Management
+
+- `GET /api/profile/me`: Get current user profile
+- `POST /api/profile/create`: Create initial profile
+- `POST /api/profile/update`: Update basic profile information
+
+#### Student Profile
+
+- `GET /api/profile/student/me`: Get student profile
+- `POST /api/profile/student/onboarding-v2`: Complete student onboarding
+- `POST /api/profile/student/cv`: Upload student CV
+- `GET /api/profile/student/cv`: Get student's uploaded CVs
+- `POST /api/profile/student/avatar`: Upload profile avatar
+
+#### Employer Profile
+
+- `GET /api/profile/employer/me`: Get employer profile
+- `POST /api/profile/employer/onboarding`: Complete employer onboarding
+- `POST /api/profile/employer/logo`: Upload company logo
+
+### Job Management
+
+- `GET /api/jobs`: Get all jobs (paginated, filterable)
+- `GET /api/jobs/{id}`: Get specific job details
+- `POST /api/jobs`: Create new job posting (employers only)
+- `PUT /api/jobs/{id}**: Update job posting (employers only)
+- `DELETE /api/jobs/{id}**: Delete job posting (employers only)
+- `GET /api/jobs/employer`: Get employer's posted jobs
+- `GET /api/jobs/search`: Search jobs by title/description
+
+### Job Applications
+
+- `POST /api/applications/apply/{jobId}`: Apply for a job (students only)
+- `GET /api/applications`: Get student's applications (students only)
+- `GET /api/applications/{id}`: Get specific application details
+- `GET /api/applications/job/{jobId}`: Get job applications (employers only)
+- `PUT /api/applications/{id}/status`: Update application status (employers only)
+
+## Setup and Installation
+
+### Prerequisites
+
+- Java 17 or higher
+- Maven
+- PostgreSQL (for production)
+
+### Development Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/OJTech/ojtech-api.git
+   cd ojtech-api
+   ```
+
+2. Build the project:
+   ```bash
+   mvn clean install
+   ```
+
+3. Run the application (uses H2 database by default):
+   ```bash
+   mvn spring-boot:run
+   ```
+
+4. Access the API at `http://localhost:8080`
+5. Access the Swagger documentation at `http://localhost:8080/swagger-ui.html`
+
+### Configuration
+
+The application can be configured using `application.properties`. Key settings include:
+
+- **Database**: H2 in-memory for development, PostgreSQL for production
+- **JWT**: Secret key and token expiration time
+- **Cloudinary**: For file storage in production
+- **File Upload**: Size limits and local storage location
+
+### Production Setup
+
+For a production environment:
+
+1. Configure PostgreSQL in `application.properties` by uncommenting the PostgreSQL configuration section
+2. Set up Cloudinary credentials
+3. Use a secure JWT secret key
+4. Build a production JAR:
+   ```bash
+   mvn clean package -Pprod
+   ```
+5. Run the application:
+   ```bash
+   java -jar target/ojtech-api.jar
+   ```
+
+## Testing
+
+Run the tests with Maven:
 
 ```bash
-npm run build
+mvn test
 ```
 
-## Future Improvements
+The test suite includes:
+- Unit tests for services and controllers
+- Integration tests for API endpoints
+- Security tests for authentication
 
-- Add real-time notifications
-- Implement complete test coverage
-- Add CI/CD pipeline
-- Enhance mobile responsiveness
-- Implement offline capabilities
+## API Documentation
 
-## Migration Notes
+Interactive API documentation is available via Swagger UI:
 
-This application was migrated from Next.js to React Vite with the following changes:
+- **Development**: http://localhost:8080/swagger-ui.html
+- **API Docs**: http://localhost:8080/api-docs
 
-1. Converted functional components to class components
-2. Changed from Next.js API routes to Spring Boot API endpoints
-3. Replaced Next.js routing with React Router
-4. Replaced server-side rendering with client-side rendering
-5. Replaced Supabase integration with direct Spring Boot API integration
+## Security Considerations
+
+This API implements several security measures:
+
+- JWT-based authentication with secure token handling
+- Role-based access control
+- Password encryption with BCrypt
+- Protection against common web vulnerabilities
+- Input validation and sanitization
+
+## Error Handling
+
+The API provides consistent error responses across all endpoints:
+
+- HTTP status codes appropriate to the error type
+- Detailed error messages
+- Validation error details when applicable
+- Consistent error response format
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+This project was developed by the OJTech team and is based on Spring Boot best practices.

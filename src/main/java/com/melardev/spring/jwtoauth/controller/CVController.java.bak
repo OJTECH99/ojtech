@@ -1,0 +1,563 @@
+package com.melardev.spring.jwtoauth.controller;
+
+import com.melardev.spring.jwtoauth.entities.CV;
+import com.melardev.spring.jwtoauth.entities.Certification;
+import com.melardev.spring.jwtoauth.entities.StudentProfile;
+import com.melardev.spring.jwtoauth.entities.WorkExperience;
+import com.melardev.spring.jwtoauth.repositories.CVRepository;
+import com.melardev.spring.jwtoauth.repositories.CertificationRepository;
+import com.melardev.spring.jwtoauth.repositories.StudentProfileRepository;
+import com.melardev.spring.jwtoauth.repositories.WorkExperienceRepository;
+import com.melardev.spring.jwtoauth.security.CurrentUser;
+import com.melardev.spring.jwtoauth.security.services.UserDetailsImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+
+@RestController
+@RequestMapping("/api/cvs")
+public class CVController {
+
+    private final CVRepository cvRepository;
+    private final StudentProfileRepository studentProfileRepository;
+    private final CertificationRepository certificationRepository;
+    private final WorkExperienceRepository workExperienceRepository;
+
+    @Autowired
+    public CVController(CVRepository cvRepository, 
+                        StudentProfileRepository studentProfileRepository,
+                        CertificationRepository certificationRepository,
+                        WorkExperienceRepository workExperienceRepository) {
+        this.cvRepository = cvRepository;
+        this.studentProfileRepository = studentProfileRepository;
+        this.certificationRepository = certificationRepository;
+        this.workExperienceRepository = workExperienceRepository;
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<List<CV>> getAllCVs(@CurrentUser UserDetailsImpl currentUser) {
+        Optional<StudentProfile> studentOpt = studentProfileRepository.findById(currentUser.getId());
+        if (studentOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Student profile not found");
+        }
+        
+        List<CV> cvs = cvRepository.findByStudent(studentOpt.get());
+        return ResponseEntity.ok(cvs);
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<CV> getCVById(@PathVariable UUID id, @CurrentUser UserDetailsImpl currentUser) {
+        Optional<CV> cvOpt = cvRepository.findById(id);
+        if (cvOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV not found");
+        }
+        
+        CV cv = cvOpt.get();
+        if (!cv.getStudent().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to access this CV");
+        }
+        
+        return ResponseEntity.ok(cv);
+    }
+
+    /**
+     * Generate a CV based on student profile data
+     * This creates a placeholder CV entity that will be updated with the actual CV data later
+     */
+    @PostMapping("/generate")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<CV> generateCV(@CurrentUser UserDetailsImpl currentUser) {
+        Optional<StudentProfile> studentOpt = studentProfileRepository.findByUserId(currentUser.getId());
+        if (studentOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Student profile not found");
+        }
+        
+        StudentProfile student = studentOpt.get();
+        
+        // Create a CV entity that will store the AI-generated resume
+        CV cv = new CV();
+        cv.setStudent(student);
+        cv.setActive(true);
+        cv.setGenerated(true);
+        cv.setLastUpdated(LocalDateTime.now());
+        
+        // Save CV
+        CV savedCV = cvRepository.save(cv);
+        
+        // If setting to active, deactivate all other CVs for this student
+        List<CV> activeCVs = cvRepository.findByStudentAndActive(student, true);
+        for (CV activeCV : activeCVs) {
+            if (!activeCV.getId().equals(savedCV.getId())) {
+                activeCV.setActive(false);
+                cvRepository.save(activeCV);
+            }
+        }
+        
+        // Update student's activeCvId
+        student.setActiveCvId(savedCV.getId());
+        studentProfileRepository.save(student);
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedCV);
+    }
+    
+    /**
+     * Update a CV with the AI-generated HTML content
+     */
+    @PutMapping("/{id}/content")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<CV> updateCVContent(
+            @PathVariable UUID id,
+            @RequestBody String htmlContent,
+            @CurrentUser UserDetailsImpl currentUser) {
+        
+        Optional<CV> cvOpt = cvRepository.findById(id);
+        if (cvOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV not found");
+        }
+        
+        CV cv = cvOpt.get();
+        if (!cv.getStudent().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to update this CV");
+        }
+        
+        // Store the HTML content in the parsedResume field
+        cv.setParsedResume(htmlContent);
+        cv.setLastUpdated(LocalDateTime.now());
+        
+        CV updatedCV = cvRepository.save(cv);
+        return ResponseEntity.ok(updatedCV);
+    }
+    
+    /**
+     * Get the HTML content of a CV
+     */
+    @GetMapping("/{id}/content")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<String> getCVContent(@PathVariable UUID id, @CurrentUser UserDetailsImpl currentUser) {
+        Optional<CV> cvOpt = cvRepository.findById(id);
+        if (cvOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV not found");
+        }
+        
+        CV cv = cvOpt.get();
+        if (!cv.getStudent().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to access this CV");
+        }
+        
+        if (cv.getParsedResume() == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV content not found");
+        }
+        
+        return ResponseEntity.ok(cv.getParsedResume());
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<Void> deleteCV(@PathVariable UUID id, @CurrentUser UserDetailsImpl currentUser) {
+        Optional<CV> cvOpt = cvRepository.findById(id);
+        if (cvOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV not found");
+        }
+        
+        CV cv = cvOpt.get();
+        if (!cv.getStudent().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to delete this CV");
+        }
+        
+        // If this was the active CV, update student's activeCvId
+        if (cv.isActive()) {
+            StudentProfile student = cv.getStudent();
+            student.setActiveCvId(null);
+            studentProfileRepository.save(student);
+        }
+        
+        cvRepository.delete(cv);
+        return ResponseEntity.noContent().build();
+    }
+    
+    // Certification endpoints
+    
+    @GetMapping("/{cvId}/certifications")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<Set<Certification>> getCertifications(@PathVariable UUID cvId, 
+                                                              @CurrentUser UserDetailsImpl currentUser) {
+        Optional<CV> cvOpt = cvRepository.findById(cvId);
+        if (cvOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV not found");
+        }
+        
+        CV cv = cvOpt.get();
+        if (!cv.getStudent().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to access this CV");
+        }
+        
+        return ResponseEntity.ok(cv.getCertifications());
+    }
+    
+    @PostMapping("/{cvId}/certifications")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<Certification> addCertification(
+            @PathVariable UUID cvId,
+            @RequestParam String name,
+            @RequestParam String issuer,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateReceived,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expiryDate,
+            @RequestParam(required = false) String credentialUrl,
+            @CurrentUser UserDetailsImpl currentUser) {
+        
+        Optional<CV> cvOpt = cvRepository.findById(cvId);
+        if (cvOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV not found");
+        }
+        
+        CV cv = cvOpt.get();
+        if (!cv.getStudent().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to modify this CV");
+        }
+        
+        Certification certification = new Certification();
+        certification.setName(name);
+        certification.setIssuer(issuer);
+        certification.setDateReceived(dateReceived);
+        certification.setExpiryDate(expiryDate);
+        certification.setCredentialUrl(credentialUrl);
+        certification.setCv(cv);
+        certification.setStudent(cv.getStudent());
+        
+        Certification savedCertification = certificationRepository.save(certification);
+        
+        // Update CV's lastUpdated
+        cv.setLastUpdated(LocalDateTime.now());
+        cvRepository.save(cv);
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedCertification);
+    }
+    
+    @PutMapping("/{cvId}/certifications/{certId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<Certification> updateCertification(
+            @PathVariable UUID cvId,
+            @PathVariable UUID certId,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String issuer,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateReceived,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expiryDate,
+            @RequestParam(required = false) String credentialUrl,
+            @CurrentUser UserDetailsImpl currentUser) {
+        
+        Optional<CV> cvOpt = cvRepository.findById(cvId);
+        if (cvOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV not found");
+        }
+        
+        CV cv = cvOpt.get();
+        if (!cv.getStudent().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to modify this CV");
+        }
+        
+        Optional<Certification> certOpt = certificationRepository.findById(certId);
+        if (certOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Certification not found");
+        }
+        
+        Certification certification = certOpt.get();
+        if (!certification.getCv().getId().equals(cvId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Certification does not belong to the specified CV");
+        }
+        
+        if (name != null) {
+            certification.setName(name);
+        }
+        
+        if (issuer != null) {
+            certification.setIssuer(issuer);
+        }
+        
+        if (dateReceived != null) {
+            certification.setDateReceived(dateReceived);
+        }
+        
+        certification.setExpiryDate(expiryDate); // Can be null
+        certification.setCredentialUrl(credentialUrl); // Can be null
+        
+        Certification updatedCertification = certificationRepository.save(certification);
+        
+        // Update CV's lastUpdated
+        cv.setLastUpdated(LocalDateTime.now());
+        cvRepository.save(cv);
+        
+        return ResponseEntity.ok(updatedCertification);
+    }
+    
+    @DeleteMapping("/{cvId}/certifications/{certId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<Void> deleteCertification(
+            @PathVariable UUID cvId,
+            @PathVariable UUID certId,
+            @CurrentUser UserDetailsImpl currentUser) {
+        
+        Optional<CV> cvOpt = cvRepository.findById(cvId);
+        if (cvOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV not found");
+        }
+        
+        CV cv = cvOpt.get();
+        if (!cv.getStudent().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to modify this CV");
+        }
+        
+        Optional<Certification> certOpt = certificationRepository.findById(certId);
+        if (certOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Certification not found");
+        }
+        
+        Certification certification = certOpt.get();
+        if (!certification.getCv().getId().equals(cvId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Certification does not belong to the specified CV");
+        }
+        
+        certificationRepository.delete(certification);
+        
+        // Update CV's lastUpdated
+        cv.setLastUpdated(LocalDateTime.now());
+        cvRepository.save(cv);
+        
+        return ResponseEntity.noContent().build();
+    }
+    
+    // Work Experience endpoints
+    
+    @GetMapping("/{cvId}/experiences")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<Set<WorkExperience>> getExperiences(@PathVariable UUID cvId, 
+                                                           @CurrentUser UserDetailsImpl currentUser) {
+        Optional<CV> cvOpt = cvRepository.findById(cvId);
+        if (cvOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV not found");
+        }
+        
+        CV cv = cvOpt.get();
+        if (!cv.getStudent().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to access this CV");
+        }
+        
+        return ResponseEntity.ok(cv.getExperiences());
+    }
+    
+    @PostMapping("/{cvId}/experiences")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<WorkExperience> addExperience(
+            @PathVariable UUID cvId,
+            @RequestParam String title,
+            @RequestParam String company,
+            @RequestParam(required = false) String location,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "false") boolean current,
+            @RequestParam String description,
+            @CurrentUser UserDetailsImpl currentUser) {
+        
+        Optional<CV> cvOpt = cvRepository.findById(cvId);
+        if (cvOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV not found");
+        }
+        
+        CV cv = cvOpt.get();
+        if (!cv.getStudent().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to modify this CV");
+        }
+        
+        // Validate that if current is true, endDate should be null
+        if (current && endDate != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date should not be provided for current positions");
+        }
+        
+        // Validate that if current is false, endDate is required
+        if (!current && endDate == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date is required for non-current positions");
+        }
+        
+        WorkExperience experience = new WorkExperience();
+        experience.setTitle(title);
+        experience.setCompany(company);
+        experience.setLocation(location);
+        experience.setStartDate(startDate);
+        experience.setEndDate(endDate);
+        experience.setCurrent(current);
+        experience.setDescription(description);
+        experience.setCv(cv);
+        experience.setStudent(cv.getStudent());
+        
+        WorkExperience savedExperience = workExperienceRepository.save(experience);
+        
+        // Update CV's lastUpdated
+        cv.setLastUpdated(LocalDateTime.now());
+        cvRepository.save(cv);
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedExperience);
+    }
+    
+    @PutMapping("/{cvId}/experiences/{expId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<WorkExperience> updateExperience(
+            @PathVariable UUID cvId,
+            @PathVariable UUID expId,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String company,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Boolean current,
+            @RequestParam(required = false) String description,
+            @CurrentUser UserDetailsImpl currentUser) {
+        
+        Optional<CV> cvOpt = cvRepository.findById(cvId);
+        if (cvOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV not found");
+        }
+        
+        CV cv = cvOpt.get();
+        if (!cv.getStudent().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to modify this CV");
+        }
+        
+        Optional<WorkExperience> expOpt = workExperienceRepository.findById(expId);
+        if (expOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Work experience not found");
+        }
+        
+        WorkExperience experience = expOpt.get();
+        if (!experience.getCv().getId().equals(cvId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Work experience does not belong to the specified CV");
+        }
+        
+        // Update fields if provided
+        if (title != null) {
+            experience.setTitle(title);
+        }
+        
+        if (company != null) {
+            experience.setCompany(company);
+        }
+        
+        experience.setLocation(location); // Can be null
+        
+        if (startDate != null) {
+            experience.setStartDate(startDate);
+        }
+        
+        // Handle current and endDate logic
+        if (current != null) {
+            experience.setCurrent(current);
+            if (current) {
+                experience.setEndDate(null);
+            }
+        }
+        
+        if (endDate != null) {
+            if (experience.isCurrent()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date should not be provided for current positions");
+            }
+            experience.setEndDate(endDate);
+        }
+        
+        if (description != null) {
+            experience.setDescription(description);
+        }
+        
+        WorkExperience updatedExperience = workExperienceRepository.save(experience);
+        
+        // Update CV's lastUpdated
+        cv.setLastUpdated(LocalDateTime.now());
+        cvRepository.save(cv);
+        
+        return ResponseEntity.ok(updatedExperience);
+    }
+    
+    @DeleteMapping("/{cvId}/experiences/{expId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<Void> deleteExperience(
+            @PathVariable UUID cvId,
+            @PathVariable UUID expId,
+            @CurrentUser UserDetailsImpl currentUser) {
+        
+        Optional<CV> cvOpt = cvRepository.findById(cvId);
+        if (cvOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV not found");
+        }
+        
+        CV cv = cvOpt.get();
+        if (!cv.getStudent().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don't have permission to modify this CV");
+        }
+        
+        Optional<WorkExperience> expOpt = workExperienceRepository.findById(expId);
+        if (expOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Work experience not found");
+        }
+        
+        WorkExperience experience = expOpt.get();
+        if (!experience.getCv().getId().equals(cvId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Work experience does not belong to the specified CV");
+        }
+        
+        workExperienceRepository.delete(experience);
+        
+        // Update CV's lastUpdated
+        cv.setLastUpdated(LocalDateTime.now());
+        cvRepository.save(cv);
+        
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<List<CV>> getCurrentUserCVs(@CurrentUser UserDetailsImpl currentUser) {
+        Optional<StudentProfile> studentOpt = studentProfileRepository.findByUserId(currentUser.getId());
+        if (studentOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        List<CV> cvs = cvRepository.findByStudent(studentOpt.get());
+        return ResponseEntity.ok(cvs);
+    }
+    
+    /**
+     * Get the HTML content of the current user's active CV
+     */
+    @GetMapping("/me/content")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<String> getCurrentUserCVContent(@CurrentUser UserDetailsImpl currentUser) {
+        Optional<StudentProfile> studentOpt = studentProfileRepository.findByUserId(currentUser.getId());
+        if (studentOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        StudentProfile student = studentOpt.get();
+        if (student.getActiveCvId() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Optional<CV> cvOpt = cvRepository.findById(student.getActiveCvId());
+        if (cvOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        CV cv = cvOpt.get();
+        if (cv.getParsedResume() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        return ResponseEntity.ok(cv.getParsedResume());
+    }
+} 
