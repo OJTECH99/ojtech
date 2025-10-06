@@ -2,77 +2,227 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Filipino Learning Platform Design System */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 10%;
- 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
- 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
- 
+    /* Educational backgrounds - warm and inviting */
+    --background: 40 25% 98%;
+    --foreground: 220 13% 18%;
+
+    /* Card system for learning materials */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
- 
-    --primary: 0 0% 15%;
-    --primary-foreground: 0 0% 98%;
- 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 15%;
- 
-    --accent: 0 0% 92%;
-    --accent-foreground: 0 0% 15%;
- 
-    --destructive: 0 70% 45%;
-    --destructive-foreground: 0 0% 98%;
- 
-    --ring: 0 0% 80%;
- 
-    --radius: 0.5rem;
+    --card-foreground: 220 13% 18%;
+
+    /* Interactive elements */
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 18%;
+
+    /* Primary - vibrant Filipino blue */
+    --primary: 208 71% 52%;
+    --primary-foreground: 210 40% 98%;
+    --primary-glow: 208 71% 65%;
+
+    /* Secondary - warm coral for engagement */
+    --secondary: 14 86% 72%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Success - tropical green */
+    --success: 142 51% 48%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 142 51% 95%;
+
+    /* Warning - golden yellow */
+    --warning: 45 93% 58%;
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 45 93% 95%;
+
+    /* Muted elements */
+    --muted: 210 40% 96%;
+    --muted-foreground: 220 13% 60%;
+
+    /* Accent - playful purple */
+    --accent: 259 83% 72%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Error states */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Borders and inputs */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 208 71% 52%;
+
+    /* Learning progress colors */
+    --progress-bg: 220 13% 95%;
+    --progress-fill: 208 71% 52%;
+
+    /* Gradients for engaging UI */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(142 51% 60%));
+    --gradient-warm: linear-gradient(135deg, hsl(var(--secondary)), hsl(25 86% 75%));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+
+    /* Shadows with brand colors */
+    --shadow-primary: 0 10px 25px -5px hsl(var(--primary) / 0.2);
+    --shadow-success: 0 8px 20px -3px hsl(var(--success) / 0.25);
+    --shadow-card: 0 2px 10px -1px hsl(220 13% 18% / 0.08);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
- 
+
   .dark {
-    --background: 0 0% 5%;
-    --foreground: 0 0% 90%;
- 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 65%;
- 
-    --accent: 0 0% 22%;
-    --accent-foreground: 0 0% 98%;
- 
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 80%;
- 
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
- 
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 90%;
- 
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 5%;
- 
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 98%;
- 
-    --destructive: 0 65% 40%;
-    --destructive-foreground: 0 0% 98%;
- 
-    --ring: 0 0% 25%;
+    /* Dark mode - maintains warmth */
+    --background: 220 25% 8%;
+    --foreground: 210 40% 95%;
+
+    --card: 220 25% 12%;
+    --card-foreground: 210 40% 95%;
+
+    --popover: 220 25% 12%;
+    --popover-foreground: 210 40% 95%;
+
+    --primary: 208 71% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 208 71% 70%;
+
+    --secondary: 14 70% 65%;
+    --secondary-foreground: 0 0% 100%;
+
+    --success: 142 51% 55%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 142 25% 15%;
+
+    --warning: 45 80% 65%;
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 45 25% 15%;
+
+    --muted: 220 25% 16%;
+    --muted-foreground: 220 13% 65%;
+
+    --accent: 259 70% 75%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 75% 65%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 25% 20%;
+    --input: 220 25% 20%;
+    --ring: 208 71% 55%;
+
+    --progress-bg: 220 25% 20%;
+    --shadow-card: 0 4px 15px -2px hsl(0 0% 0% / 0.3);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+}
+
+@layer components {
+  /* Learning card animations */
+  .learning-card {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+
+  .activity-card {
+    @apply bg-card border border-border rounded-lg p-6 transition-all duration-200;
+    @apply hover:shadow-md hover:border-primary/30;
+  }
+
+  /* Progress indicators */
+  .progress-ring {
+    transition: stroke-dasharray var(--transition-smooth);
+  }
+
+  /* Button hover effects */
+  .btn-bounce:hover {
+    animation: bounce 0.3s ease-in-out;
+  }
+
+  /* Success animations */
+  .success-pulse {
+    animation: pulse-success 0.6s ease-in-out;
+  }
+
+  @keyframes pulse-success {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  @keyframes bounce {
+    0%, 20%, 60%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-5px); }
+    80% { transform: translateY(-2px); }
+  }
+
+  /* Drag and drop styles */
+  .drag-item {
+    @apply cursor-grab active:cursor-grabbing transition-transform duration-200;
+  }
+
+  .drag-item:hover {
+    @apply scale-105;
+  }
+
+  .drop-zone {
+    @apply border-2 border-dashed border-muted-foreground/30 rounded-lg p-4;
+    @apply transition-colors duration-200;
+  }
+
+  .drop-zone.active {
+    @apply border-primary bg-primary/5;
   }
 }
