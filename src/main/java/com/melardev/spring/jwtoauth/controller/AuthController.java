@@ -1,59 +1,56 @@
 package com.melardev.spring.jwtoauth.controller;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.Optional;
-
-import jakarta.validation.Valid;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.view.RedirectView;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.melardev.spring.jwtoauth.dtos.requests.ChangePasswordRequest;
 import com.melardev.spring.jwtoauth.dtos.requests.LoginDto;
 import com.melardev.spring.jwtoauth.dtos.requests.LoginRequest;
 import com.melardev.spring.jwtoauth.dtos.requests.SignupDto;
 import com.melardev.spring.jwtoauth.dtos.requests.SignupRequest;
-import com.melardev.spring.jwtoauth.dtos.requests.ChangePasswordRequest;
 import com.melardev.spring.jwtoauth.dtos.responses.JwtResponse;
 import com.melardev.spring.jwtoauth.dtos.responses.MessageResponse;
+import com.melardev.spring.jwtoauth.entities.AdminProfile;
 import com.melardev.spring.jwtoauth.entities.ERole;
 import com.melardev.spring.jwtoauth.entities.Role;
 import com.melardev.spring.jwtoauth.entities.User;
-import com.melardev.spring.jwtoauth.entities.Profile;
-import com.melardev.spring.jwtoauth.entities.UserRole;
+import com.melardev.spring.jwtoauth.repositories.AdminProfileRepository;
 import com.melardev.spring.jwtoauth.repositories.RoleRepository;
 import com.melardev.spring.jwtoauth.repositories.UserRepository;
-import com.melardev.spring.jwtoauth.repositories.AdminProfileRepository;
 import com.melardev.spring.jwtoauth.security.jwt.JwtUtils;
 import com.melardev.spring.jwtoauth.security.services.UserDetailsImpl;
-import com.melardev.spring.jwtoauth.entities.*;
-import com.melardev.spring.jwtoauth.service.UserService;
 import com.melardev.spring.jwtoauth.service.EmailService;
+import com.melardev.spring.jwtoauth.service.UserService;
 
-import java.util.Collections;
-import java.util.UUID;
-import java.util.Random;
+import jakarta.validation.Valid;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -336,7 +333,7 @@ public class AuthController {
                             userRoles.add(adminRole);
                             break;
                         case "employer":
-                            Role modRole = roleRepository.findByName(ERole.ROLE_EMPLOYER)
+                            Role modRole = roleRepository.findByName(ERole.ROLE_NLO)
                                     .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
                             userRoles.add(modRole);
                             break;
@@ -797,8 +794,8 @@ public class AuthController {
                     userRoles.add(userRole);
                     break;
                 case "employer":
-                    userRole = roleRepository.findByName(ERole.ROLE_EMPLOYER)
-                        .orElseThrow(() -> new RuntimeException("Error: Employer role not found."));
+                    userRole = roleRepository.findByName(ERole.ROLE_NLO)
+                        .orElseThrow(() -> new RuntimeException("Error: NLO role not found."));
                     userRoles.add(userRole);
                     break;
                 case "student":

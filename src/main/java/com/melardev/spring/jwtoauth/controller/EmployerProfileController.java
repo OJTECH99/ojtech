@@ -49,7 +49,7 @@ public class EmployerProfileController {
      * @throws ResourceNotFoundException If the employer profile is not found.
      */
     @GetMapping("/me")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<?> getCurrentEmployerProfile() {
         logger.debug("GET /api/employer-profiles/me called");
         
@@ -97,7 +97,7 @@ public class EmployerProfileController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<?> createEmployerProfile(@RequestBody Map<String, Object> profileData) {
         UUID userId = SecurityUtils.getCurrentUserId();
         if (userId == null) {
@@ -117,7 +117,7 @@ public class EmployerProfileController {
         // Create new profile
         EmployerProfile profile = new EmployerProfile();
         profile.setUser(user);
-        profile.setRole(UserRole.EMPLOYER);
+        profile.setRole(UserRole.NLO);
         
         updateProfileFields(profile, profileData);
         
@@ -127,7 +127,7 @@ public class EmployerProfileController {
     }
 
     @PutMapping("/me")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<?> updateEmployerProfile(@RequestBody Map<String, Object> profileData) {
         UUID userId = SecurityUtils.getCurrentUserId();
         if (userId == null) {
@@ -148,7 +148,7 @@ public class EmployerProfileController {
     }
 
     @PostMapping("/logo")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<?> uploadLogo(@RequestParam("file") MultipartFile file) throws IOException {
         UUID userId = SecurityUtils.getCurrentUserId();
         if (userId == null) {

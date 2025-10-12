@@ -1,17 +1,12 @@
 package com.melardev.spring.jwtoauth.controller;
 
-import com.melardev.spring.jwtoauth.dtos.responses.JobResponseDTO;
-import com.melardev.spring.jwtoauth.dtos.responses.MessageResponse;
-import com.melardev.spring.jwtoauth.entities.EmployerProfile;
-import com.melardev.spring.jwtoauth.entities.Job;
-import com.melardev.spring.jwtoauth.entities.JobMatch;
-import com.melardev.spring.jwtoauth.entities.StudentProfile;
-import com.melardev.spring.jwtoauth.exceptions.ResourceNotFoundException;
-import com.melardev.spring.jwtoauth.repositories.EmployerProfileRepository;
-import com.melardev.spring.jwtoauth.repositories.JobRepository;
-import com.melardev.spring.jwtoauth.repositories.StudentProfileRepository;
-import com.melardev.spring.jwtoauth.security.services.UserDetailsImpl;
-import com.melardev.spring.jwtoauth.services.JobMatchService;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,14 +16,31 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.melardev.spring.jwtoauth.dtos.responses.JobResponseDTO;
+import com.melardev.spring.jwtoauth.dtos.responses.MessageResponse;
+import com.melardev.spring.jwtoauth.entities.Company;
+import com.melardev.spring.jwtoauth.entities.EmployerProfile;
+import com.melardev.spring.jwtoauth.entities.Job;
+import com.melardev.spring.jwtoauth.entities.JobMatch;
+import com.melardev.spring.jwtoauth.entities.StudentProfile;
+import com.melardev.spring.jwtoauth.exceptions.ResourceNotFoundException;
+import com.melardev.spring.jwtoauth.repositories.CompanyRepository;
+import com.melardev.spring.jwtoauth.repositories.EmployerProfileRepository;
+import com.melardev.spring.jwtoauth.repositories.JobRepository;
+import com.melardev.spring.jwtoauth.repositories.StudentProfileRepository;
+import com.melardev.spring.jwtoauth.security.services.UserDetailsImpl;
+import com.melardev.spring.jwtoauth.services.JobMatchService;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -43,6 +55,9 @@ public class JobController {
     
     @Autowired
     private StudentProfileRepository studentProfileRepository;
+    
+    @Autowired
+    private CompanyRepository companyRepository;
     
     @Autowired
     private JobMatchService jobMatchService;
@@ -72,7 +87,7 @@ public class JobController {
     }
     
     @GetMapping("/employer")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<List<JobResponseDTO>> getEmployerJobs() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -94,7 +109,7 @@ public class JobController {
     }
     
     @GetMapping("/employer/{id}")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<?> getEmployerJobById(@PathVariable UUID id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -149,7 +164,7 @@ public class JobController {
     }
     
     @PostMapping
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<Job> createJob(@RequestBody Map<String, Object> jobData) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -198,6 +213,21 @@ public class JobController {
             job.setCurrency((String) jobData.get("currency"));
         }
         
+        // Handle company association
+        if (jobData.containsKey("companyId") && jobData.get("companyId") != null) {
+            String companyIdStr = jobData.get("companyId").toString();
+            try {
+                UUID companyId = UUID.fromString(companyIdStr);
+                Optional<Company> companyOpt = companyRepository.findById(companyId);
+                if (companyOpt.isPresent()) {
+                    job.setCompany(companyOpt.get());
+                }
+            } catch (IllegalArgumentException e) {
+                // Invalid UUID format, skip company association
+                System.err.println("Invalid company ID format: " + companyIdStr);
+            }
+        }
+        
         job.setPostedAt(LocalDateTime.now());
         job.setActive(true);
         
@@ -218,7 +248,7 @@ public class JobController {
     }
     
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<?> updateJob(@PathVariable UUID id, @RequestBody Map<String, Object> jobData) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -287,7 +317,7 @@ public class JobController {
     }
     
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<?> deleteJob(@PathVariable UUID id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();

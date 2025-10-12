@@ -127,7 +127,7 @@ public class CVController {
      * Endpoint for employers to view a student's CV by ID
      */
     @GetMapping("/employer/view/{id}")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<CV> getStudentCVById(@PathVariable UUID id) {
         Optional<CV> cvOpt = cvRepository.findById(id);
         if (cvOpt.isEmpty()) {
@@ -148,7 +148,7 @@ public class CVController {
      * Endpoint for employers to get the HTML content of a student's CV
      */
     @GetMapping("/employer/view/{id}/content")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<String> getStudentCVContent(@PathVariable UUID id) {
         Optional<CV> cvOpt = cvRepository.findById(id);
         if (cvOpt.isEmpty()) {
@@ -173,7 +173,7 @@ public class CVController {
      * Endpoint for employers to get certifications for a student's CV
      */
     @GetMapping("/employer/view/{id}/certifications")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<Set<Certification>> getStudentCVCertifications(@PathVariable UUID id) {
         Optional<CV> cvOpt = cvRepository.findById(id);
         if (cvOpt.isEmpty()) {
@@ -194,7 +194,7 @@ public class CVController {
      * Endpoint for employers to get work experiences for a student's CV
      */
     @GetMapping("/employer/view/{id}/experiences")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<Set<WorkExperience>> getStudentCVExperiences(@PathVariable UUID id) {
         Optional<CV> cvOpt = cvRepository.findById(id);
         if (cvOpt.isEmpty()) {

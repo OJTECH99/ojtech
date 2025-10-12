@@ -4,7 +4,6 @@ import com.melardev.spring.jwtoauth.entities.StudentProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,4 +14,5 @@ public interface StudentProfileRepository extends JpaRepository<StudentProfile, 
     @Query("SELECT s FROM StudentProfile s WHERE s.activeCvId IS NOT NULL")
     List<StudentProfile> findAllWithActiveCVs();
     List<StudentProfile> findByVerified(boolean verified);
+    long countByVerified(boolean verified);
 }

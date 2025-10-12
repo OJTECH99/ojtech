@@ -37,6 +37,27 @@ public class CloudinaryPublicController {
         return ResponseEntity.ok(payload);
     }
 
+    @GetMapping("/company-logo-params")
+    public ResponseEntity<?> getCompanyLogoParams() {
+        long timestamp = System.currentTimeMillis() / 1000L;
+
+        // Only include parameters that will be sent in the upload request
+        // Cloudinary only signs: folder, timestamp (and any transformation params)
+        Map<String, Object> paramsToSign = new HashMap<>();
+        paramsToSign.put("folder", "company_logos");
+        paramsToSign.put("timestamp", timestamp);
+
+        String signature = cloudinary.apiSignRequest(paramsToSign, cloudinary.config.apiSecret);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("cloudName", cloudName);
+        payload.put("apiKey", apiKey);
+        payload.put("timestamp", timestamp);
+        payload.put("signature", signature);
+        payload.put("folder", "company_logos");
+        return ResponseEntity.ok(payload);
+    }
+
     @GetMapping("/signed-params")
     public ResponseEntity<?> getSignedParams() {
         long timestamp = System.currentTimeMillis() / 1000L;

@@ -180,7 +180,7 @@ public class ProfileController {
     }
     
     @PostMapping("/employer/onboarding")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<?> completeEmployerOnboarding(@RequestBody Map<String, Object> profileData) {
         logger.debug("POST /api/profile/employer/onboarding called");
         
@@ -212,7 +212,7 @@ public class ProfileController {
         // Create new profile
         EmployerProfile profile = new EmployerProfile();
         profile.setUser(user);
-        profile.setRole(UserRole.EMPLOYER);
+        profile.setRole(UserRole.NLO);
         
         updateProfileFields(profile, profileData);
         profile.setHasCompletedOnboarding(true);
@@ -224,7 +224,7 @@ public class ProfileController {
     }
 
     @PostMapping("/avatar")
-    @PreAuthorize("hasRole('STUDENT') or hasRole('EMPLOYER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('STUDENT') or hasRole('NLO') or hasRole('ADMIN')")
     public ResponseEntity<?> uploadAvatar(@RequestParam("file") MultipartFile file) throws IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -263,7 +263,7 @@ public class ProfileController {
     }
 
     @PutMapping("/me")
-    @PreAuthorize("hasRole('STUDENT') or hasRole('EMPLOYER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('STUDENT') or hasRole('NLO') or hasRole('ADMIN')")
     public ResponseEntity<?> updateProfile(@RequestBody Map<String, Object> updates) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -377,13 +377,13 @@ public class ProfileController {
             
             // Create new profile based on user roles
             boolean isEmployer = user.getRoles().stream()
-                    .anyMatch(role -> role.getName() == ERole.ROLE_EMPLOYER);
+                    .anyMatch(role -> role.getName() == ERole.ROLE_NLO);
             
             if (isEmployer) {
                 logger.debug("Creating new employer profile");
                 EmployerProfile profile = new EmployerProfile();
                 profile.setUser(user);
-                profile.setRole(UserRole.EMPLOYER);
+                profile.setRole(UserRole.NLO);
                 updateProfileFields(profile, profileData);
                 EmployerProfile savedProfile = employerProfileRepository.save(profile);
                 return ResponseEntity.ok(savedProfile);

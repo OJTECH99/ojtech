@@ -51,7 +51,7 @@ public class EmployerProfile extends Profile {
     private List<Job> jobs = new ArrayList<>();
     
     public EmployerProfile() {
-        this.setRole(UserRole.EMPLOYER);
+        this.setRole(UserRole.NLO);
     }
     
     public String getCompanyName() {

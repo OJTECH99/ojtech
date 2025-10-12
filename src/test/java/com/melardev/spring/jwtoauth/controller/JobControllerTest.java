@@ -80,7 +80,7 @@ public class JobControllerTest {
         employerProfile.setId(employerProfileId);
         employerProfile.setUser(employerUser);
         employerProfile.setCompanyName("Test Company");
-        employerProfile.setRole(UserRole.EMPLOYER);
+        employerProfile.setRole(UserRole.NLO);
         
         // Create student user
         studentId = UUID.randomUUID();
@@ -95,7 +95,7 @@ public class JobControllerTest {
                 "employer",
                 "employer@example.com",
                 "password",
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_EMPLOYER"))
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_NLO"))
         );
         
         studentUserDetails = new UserDetailsImpl(

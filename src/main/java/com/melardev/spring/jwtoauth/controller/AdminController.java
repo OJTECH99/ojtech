@@ -129,7 +129,7 @@ public class AdminController {
                         eRole = ERole.ROLE_ADMIN;
                         break;
                     case "employer":
-                        eRole = ERole.ROLE_EMPLOYER;
+                        eRole = ERole.ROLE_NLO;
                         break;
                 }
             }
@@ -217,7 +217,7 @@ public class AdminController {
                     eRole = ERole.ROLE_ADMIN;
                     break;
                 case "employer":
-                    eRole = ERole.ROLE_EMPLOYER;
+                    eRole = ERole.ROLE_NLO;
                     break;
                 case "student":
                     eRole = ERole.ROLE_STUDENT;
@@ -263,13 +263,13 @@ public class AdminController {
         Map<String, Long> userDistribution = new HashMap<>();
         
         Optional<Role> adminRoleOpt = roleRepository.findByName(ERole.ROLE_ADMIN);
-        Optional<Role> employerRoleOpt = roleRepository.findByName(ERole.ROLE_EMPLOYER);
+        Optional<Role> nloRoleOpt = roleRepository.findByName(ERole.ROLE_NLO);
         Optional<Role> studentRoleOpt = roleRepository.findByName(ERole.ROLE_STUDENT);
         
         // Count users by iterating through all users and checking roles
         // Not efficient for large datasets, but works for this demo
         long adminCount = 0;
-        long employerCount = 0;
+        long nloCount = 0;
         long studentCount = 0;
         
         List<User> allUsers = userRepository.findAll();
@@ -280,8 +280,8 @@ public class AdminController {
                 adminCount++;
             }
             
-            if (employerRoleOpt.isPresent() && userRoles.contains(employerRoleOpt.get())) {
-                employerCount++;
+            if (nloRoleOpt.isPresent() && userRoles.contains(nloRoleOpt.get())) {
+                nloCount++;
             }
             
             if (studentRoleOpt.isPresent() && userRoles.contains(studentRoleOpt.get())) {
@@ -290,7 +290,7 @@ public class AdminController {
         }
         
         userDistribution.put("admin", adminCount);
-        userDistribution.put("employer", employerCount);
+        userDistribution.put("employer", nloCount);
         userDistribution.put("student", studentCount);
         stats.put("userDistribution", userDistribution);
         

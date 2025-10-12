@@ -2,6 +2,6 @@ package com.melardev.spring.jwtoauth.entities;
 
 public enum UserRole {
     STUDENT,
-    EMPLOYER,
+    NLO,
     ADMIN
-} 
+}

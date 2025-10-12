@@ -71,7 +71,7 @@ public class EmployerProfileControllerTest {
         employerProfile = new EmployerProfile();
         employerProfile.setId(profileId);
         employerProfile.setUser(user);
-        employerProfile.setRole(UserRole.EMPLOYER);
+        employerProfile.setRole(UserRole.NLO);
         employerProfile.setFullName("Test Employer");
         employerProfile.setCompanyName("Test Company");
         employerProfile.setIndustry("Technology");
@@ -83,7 +83,7 @@ public class EmployerProfileControllerTest {
                 "employer",
                 "employer@example.com",
                 "password",
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_EMPLOYER"))
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_NLO"))
         );
         
         Authentication authentication = new UsernamePasswordAuthenticationToken(

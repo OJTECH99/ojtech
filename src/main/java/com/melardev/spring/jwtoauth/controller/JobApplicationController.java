@@ -1,36 +1,52 @@
 package com.melardev.spring.jwtoauth.controller;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.melardev.spring.jwtoauth.dtos.EmailDraftDTO;
 import com.melardev.spring.jwtoauth.dtos.responses.JobApplicationResponseDTO;
 import com.melardev.spring.jwtoauth.dtos.responses.MessageResponse;
-import com.melardev.spring.jwtoauth.entities.*;
+import com.melardev.spring.jwtoauth.entities.ApplicationStatus;
+import com.melardev.spring.jwtoauth.entities.CV;
+import com.melardev.spring.jwtoauth.entities.EmployerProfile;
+import com.melardev.spring.jwtoauth.entities.Job;
+import com.melardev.spring.jwtoauth.entities.JobApplication;
+import com.melardev.spring.jwtoauth.entities.JobMatch;
+import com.melardev.spring.jwtoauth.entities.StudentEmailTracking;
+import com.melardev.spring.jwtoauth.entities.StudentProfile;
 import com.melardev.spring.jwtoauth.exceptions.BadRequestException;
 import com.melardev.spring.jwtoauth.exceptions.ResourceNotFoundException;
 import com.melardev.spring.jwtoauth.repositories.CVRepository;
 import com.melardev.spring.jwtoauth.repositories.JobApplicationRepository;
 import com.melardev.spring.jwtoauth.repositories.JobMatchRepository;
 import com.melardev.spring.jwtoauth.repositories.JobRepository;
-import com.melardev.spring.jwtoauth.repositories.StudentProfileRepository;
 import com.melardev.spring.jwtoauth.repositories.StudentEmailTrackingRepository;
+import com.melardev.spring.jwtoauth.repositories.StudentProfileRepository;
 import com.melardev.spring.jwtoauth.security.services.UserDetailsImpl;
-import com.melardev.spring.jwtoauth.services.CoverLetterService;
 import com.melardev.spring.jwtoauth.service.EmailService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.HashMap;
+import com.melardev.spring.jwtoauth.services.CoverLetterService;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -81,7 +97,7 @@ public class JobApplicationController {
     }
 
     @GetMapping("/job/{jobId}")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<List<JobApplicationResponseDTO>> getJobApplications(@PathVariable UUID jobId) {
         Optional<Job> jobOpt = jobRepository.findById(jobId);
         if (jobOpt.isEmpty()) {
@@ -187,7 +203,7 @@ public class JobApplicationController {
     }
 
     @PutMapping("/{applicationId}/status")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('NLO')")
     public ResponseEntity<?> updateApplicationStatus(@PathVariable UUID applicationId, @RequestBody Map<String, String> statusData) {
         Optional<JobApplication> applicationOpt = jobApplicationRepository.findById(applicationId);
         if (applicationOpt.isEmpty()) {
@@ -231,7 +247,7 @@ public class JobApplicationController {
     }
 
     @GetMapping("/{applicationId}")
-    @PreAuthorize("hasRole('STUDENT') or hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('STUDENT') or hasRole('NLO')")
     public ResponseEntity<JobApplicationResponseDTO> getApplicationById(@PathVariable UUID applicationId) {
         Optional<JobApplication> applicationOpt = jobApplicationRepository.findById(applicationId);
         if (applicationOpt.isEmpty()) {
@@ -254,7 +270,7 @@ public class JobApplicationController {
         }
         
         // Employers can only view applications for their jobs
-        if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYER"))) {
+        if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_NLO"))) {
             if (!application.getJob().getEmployer().getUser().getId().equals(userId)) {
                 return ResponseEntity.badRequest().build();
             }

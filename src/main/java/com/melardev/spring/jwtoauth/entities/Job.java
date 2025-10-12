@@ -19,6 +19,11 @@ public class Job extends BaseEntity {
     @JsonBackReference
     private EmployerProfile employer;
     
+    @OneToOne
+    @JoinColumn(name = "company_id", unique = true)
+    @JsonIgnoreProperties({"job"})
+    private Company company;
+    
     @Column(name = "title", nullable = false)
     private String title;
     
@@ -81,6 +86,14 @@ public class Job extends BaseEntity {
     
     public void setEmployer(EmployerProfile employer) {
         this.employer = employer;
+    }
+    
+    public Company getCompany() {
+        return company;
+    }
+    
+    public void setCompany(Company company) {
+        this.company = company;
     }
     
     public String getTitle() {

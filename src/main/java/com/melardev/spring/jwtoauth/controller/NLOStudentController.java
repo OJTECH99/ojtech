@@ -9,11 +9,13 @@ import com.melardev.spring.jwtoauth.entities.StudentProfile;
 import com.melardev.spring.jwtoauth.entities.WorkExperience;
 import com.melardev.spring.jwtoauth.exceptions.ResourceNotFoundException;
 import com.melardev.spring.jwtoauth.repositories.StudentProfileRepository;
+import com.melardev.spring.jwtoauth.security.services.UserDetailsImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -21,28 +23,42 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/admin/students")
-@PreAuthorize("hasRole('NLO')")
-public class AdminStudentController {
+@RequestMapping("/api/nlo/students")
+@PreAuthorize("hasRole('ROLE_NLO')") // NLO users have NLO role
+public class NLOStudentController {
 
-    private static final Logger logger = LoggerFactory.getLogger(AdminStudentController.class);
+    private static final Logger logger = LoggerFactory.getLogger(NLOStudentController.class);
 
     @Autowired
     private StudentProfileRepository studentProfileRepository;
 
     @GetMapping
     public ResponseEntity<?> getStudents(
-            @RequestParam(required = false) Boolean verified) {
+            @RequestParam(required = false) Boolean verified,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
         
         try {
+            // Check if user is authenticated
+            if (userDetails == null) {
+                logger.error("User details is null - user not authenticated");
+                logger.error("Security context authentication: {}", 
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication());
+                return ResponseEntity.status(401)
+                        .body(new MessageResponse("User not authenticated"));
+            }
+            
+            logger.info("NLO user authenticated: {} with ID: {}", userDetails.getUsername(), userDetails.getId());
+            
             List<StudentProfile> students;
             
             if (verified != null) {
                 students = studentProfileRepository.findByVerified(verified);
-                logger.info("Fetched {} students with verified={}", students.size(), verified);
+                logger.info("NLO user {} fetched {} students with verified={}", 
+                    userDetails.getUsername(), students.size(), verified);
             } else {
                 students = studentProfileRepository.findAll();
-                logger.info("Fetched all {} students", students.size());
+                logger.info("NLO user {} fetched all {} students", 
+                    userDetails.getUsername(), students.size());
             }
             
             List<Map<String, Object>> result = students.stream()
@@ -51,58 +67,84 @@ public class AdminStudentController {
             
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            logger.error("Error fetching students", e);
+            logger.error("Error fetching students for NLO user", e);
             return ResponseEntity.status(500)
                     .body(new MessageResponse("Error fetching students: " + e.getMessage()));
         }
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<?> getStudentById(@PathVariable UUID id) {
+    public ResponseEntity<?> getStudentById(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
         try {
+            if (userDetails == null) {
+                return ResponseEntity.status(401)
+                        .body(new MessageResponse("User not authenticated"));
+            }
             StudentProfile student = studentProfileRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
             
             Map<String, Object> studentDto = convertToDto(student);
             
+            logger.info("NLO user {} accessed student details for {}", 
+                userDetails.getUsername(), student.getFullName());
+            
             return ResponseEntity.ok(studentDto);
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            logger.error("Error fetching student", e);
+            logger.error("Error fetching student for NLO user {}", userDetails.getUsername(), e);
             return ResponseEntity.status(500)
                     .body(new MessageResponse("Error fetching student: " + e.getMessage()));
         }
     }
     
-    // DEPRECATED: Student verification has been transferred to NLO (National Labor Office)
-    // Use /api/nlo/students/{id}/verify endpoint instead
-    // These endpoints are kept for backward compatibility but should not be used
-    /*
     @PutMapping("/{id}/verify")
     public ResponseEntity<?> verifyStudent(
             @PathVariable UUID id,
-            @RequestBody(required = false) Map<String, String> body) {
+            @RequestBody(required = false) Map<String, String> body,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
         
         try {
+            if (userDetails == null) {
+                return ResponseEntity.status(401)
+                        .body(new MessageResponse("User not authenticated"));
+            }
             StudentProfile student = studentProfileRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
             
             student.setVerified(true);
             student.setVerifiedAt(LocalDate.now());
+            student.setVerifiedByUserId(userDetails.getId());
+            student.setVerifiedByRole("NLO");
+            student.setVerificationSource("NLO");
             
+            // Add NLO-specific verification notes
+            String notes = "";
             if (body != null && body.containsKey("notes")) {
-                student.setVerificationNotes(body.get("notes"));
+                notes = body.get("notes");
             }
             
-            studentProfileRepository.save(student);
-            logger.info("Student {} verified successfully", id);
+            // Prefix with NLO verification info
+            String nloNotes = String.format("Verified by NLO Staff (%s) on %s", 
+                userDetails.getUsername(), LocalDate.now());
+            if (!notes.isEmpty()) {
+                nloNotes += ". Notes: " + notes;
+            }
             
-            return ResponseEntity.ok(new MessageResponse("Student verified successfully"));
+            student.setVerificationNotes(nloNotes);
+            
+            studentProfileRepository.save(student);
+            
+            logger.info("NLO user {} verified student {} ({})", 
+                userDetails.getUsername(), student.getFullName(), id);
+            
+            return ResponseEntity.ok(new MessageResponse("Student verified successfully by NLO"));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            logger.error("Error verifying student", e);
+            logger.error("Error verifying student for NLO user {}", userDetails.getUsername(), e);
             return ResponseEntity.status(500)
                     .body(new MessageResponse("Error verifying student: " + e.getMessage()));
         }
@@ -111,32 +153,79 @@ public class AdminStudentController {
     @PutMapping("/{id}/unverify")
     public ResponseEntity<?> unverifyStudent(
             @PathVariable UUID id,
-            @RequestBody(required = false) Map<String, String> body) {
+            @RequestBody(required = false) Map<String, String> body,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
         
         try {
+            if (userDetails == null) {
+                return ResponseEntity.status(401)
+                        .body(new MessageResponse("User not authenticated"));
+            }
             StudentProfile student = studentProfileRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
             
             student.setVerified(false);
             student.setVerifiedAt(null);
+            student.setVerifiedByUserId(userDetails.getId());
+            student.setVerifiedByRole("NLO");
+            student.setVerificationSource("NLO");
             
+            // Add NLO-specific unverification notes
+            String notes = "";
             if (body != null && body.containsKey("notes")) {
-                student.setVerificationNotes(body.get("notes"));
+                notes = body.get("notes");
             }
             
-            studentProfileRepository.save(student);
-            logger.info("Student {} unverified", id);
+            // Prefix with NLO unverification info
+            String nloNotes = String.format("Unverified by NLO Staff (%s) on %s", 
+                userDetails.getUsername(), LocalDate.now());
+            if (!notes.isEmpty()) {
+                nloNotes += ". Reason: " + notes;
+            }
             
-            return ResponseEntity.ok(new MessageResponse("Student unverified successfully"));
+            student.setVerificationNotes(nloNotes);
+            
+            studentProfileRepository.save(student);
+            
+            logger.info("NLO user {} unverified student {} ({})", 
+                userDetails.getUsername(), student.getFullName(), id);
+            
+            return ResponseEntity.ok(new MessageResponse("Student unverified successfully by NLO"));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            logger.error("Error unverifying student", e);
+            logger.error("Error unverifying student for NLO user {}", userDetails.getUsername(), e);
             return ResponseEntity.status(500)
                     .body(new MessageResponse("Error unverifying student: " + e.getMessage()));
         }
     }
-    */
+
+    @GetMapping("/verification-stats")
+    public ResponseEntity<?> getVerificationStats(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        try {
+            if (userDetails == null) {
+                return ResponseEntity.status(401)
+                        .body(new MessageResponse("User not authenticated"));
+            }
+            long totalStudents = studentProfileRepository.count();
+            long verifiedStudents = studentProfileRepository.countByVerified(true);
+            long unverifiedStudents = studentProfileRepository.countByVerified(false);
+            
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("totalStudents", totalStudents);
+            stats.put("verifiedStudents", verifiedStudents);
+            stats.put("unverifiedStudents", unverifiedStudents);
+            stats.put("verificationRate", totalStudents > 0 ? (double) verifiedStudents / totalStudents * 100 : 0);
+            
+            logger.info("NLO user {} accessed verification statistics", userDetails.getUsername());
+            
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            logger.error("Error fetching verification stats for NLO user {}", userDetails.getUsername(), e);
+            return ResponseEntity.status(500)
+                    .body(new MessageResponse("Error fetching verification statistics: " + e.getMessage()));
+        }
+    }
     
     private Map<String, Object> convertToDto(StudentProfile student) {
         Map<String, Object> dto = new HashMap<>();
@@ -176,7 +265,6 @@ public class AdminStudentController {
         // Include GitHub projects if available
         if (student.getGithubProjects() != null && !student.getGithubProjects().isEmpty()) {
             try {
-                // Parse the JSON string into a list of maps
                 ObjectMapper objectMapper = new ObjectMapper();
                 List<Map<String, Object>> githubProjects = objectMapper.readValue(
                     student.getGithubProjects(), 

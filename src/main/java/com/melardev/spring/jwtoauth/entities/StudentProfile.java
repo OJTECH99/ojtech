@@ -93,6 +93,15 @@ public class StudentProfile extends Profile {
     @Column(name = "verification_notes")
     private String verificationNotes;
 
+    @Column(name = "verified_by_user_id")
+    private UUID verifiedByUserId;
+    
+    @Column(name = "verified_by_role")
+    private String verifiedByRole;
+    
+    @Column(name = "verification_source")
+    private String verificationSource = "ADMIN";
+
     @Column(name = "preojt_orientation_url")
     private String preojtOrientationUrl;
 
@@ -207,4 +216,13 @@ public class StudentProfile extends Profile {
 
     public String getPreojtOrientationUrl() { return preojtOrientationUrl; }
     public void setPreojtOrientationUrl(String preojtOrientationUrl) { this.preojtOrientationUrl = preojtOrientationUrl; }
+
+    public UUID getVerifiedByUserId() { return verifiedByUserId; }
+    public void setVerifiedByUserId(UUID verifiedByUserId) { this.verifiedByUserId = verifiedByUserId; }
+    
+    public String getVerifiedByRole() { return verifiedByRole; }
+    public void setVerifiedByRole(String verifiedByRole) { this.verifiedByRole = verifiedByRole; }
+    
+    public String getVerificationSource() { return verificationSource; }
+    public void setVerificationSource(String verificationSource) { this.verificationSource = verificationSource; }
 }

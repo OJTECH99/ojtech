@@ -152,7 +152,7 @@ public class JobApplicationControllerTest {
     // Helper methods to set up auth context
     private void mockAuthWithEmployer() {
         List<SimpleGrantedAuthority> authorities = Collections.singletonList(
-                new SimpleGrantedAuthority("ROLE_EMPLOYER"));
+                new SimpleGrantedAuthority("ROLE_NLO"));
         
         UserDetailsImpl userDetails = new UserDetailsImpl(
                 employerId,

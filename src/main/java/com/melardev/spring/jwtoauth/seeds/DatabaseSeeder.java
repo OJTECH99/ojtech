@@ -1,7 +1,9 @@
 package com.melardev.spring.jwtoauth.seeds;
 
-import com.melardev.spring.jwtoauth.entities.*;
-import com.melardev.spring.jwtoauth.repositories.*;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +17,25 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import com.melardev.spring.jwtoauth.entities.ApplicationStatus;
+import com.melardev.spring.jwtoauth.entities.CV;
+import com.melardev.spring.jwtoauth.entities.Company;
+import com.melardev.spring.jwtoauth.entities.ERole;
+import com.melardev.spring.jwtoauth.entities.EmployerProfile;
+import com.melardev.spring.jwtoauth.entities.Job;
+import com.melardev.spring.jwtoauth.entities.JobApplication;
+import com.melardev.spring.jwtoauth.entities.JobMatch;
+import com.melardev.spring.jwtoauth.entities.Role;
+import com.melardev.spring.jwtoauth.entities.StudentProfile;
+import com.melardev.spring.jwtoauth.entities.User;
+import com.melardev.spring.jwtoauth.repositories.CVRepository;
+import com.melardev.spring.jwtoauth.repositories.CompanyRepository;
+import com.melardev.spring.jwtoauth.repositories.EmployerProfileRepository;
+import com.melardev.spring.jwtoauth.repositories.JobApplicationRepository;
+import com.melardev.spring.jwtoauth.repositories.JobRepository;
+import com.melardev.spring.jwtoauth.repositories.RoleRepository;
+import com.melardev.spring.jwtoauth.repositories.StudentProfileRepository;
+import com.melardev.spring.jwtoauth.repositories.UserRepository;
 
 @Component
 @Profile("!test") // Don't run this seeder in test profile
@@ -44,6 +63,9 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     @Autowired
     private JobApplicationRepository jobApplicationRepository;
+    
+    @Autowired
+    private CompanyRepository companyRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -68,6 +90,18 @@ public class DatabaseSeeder implements CommandLineRunner {
                         seedProfiles();
                     } catch (Exception e) {
                         logger.error("Error seeding profiles: {}", e.getMessage());
+                        status.setRollbackOnly();
+                    }
+                }
+            });
+            
+            transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+                @Override
+                protected void doInTransactionWithoutResult(TransactionStatus status) {
+                    try {
+                        seedCompanies();
+                    } catch (Exception e) {
+                        logger.error("Error seeding companies: {}", e.getMessage());
                         status.setRollbackOnly();
                     }
                 }
@@ -121,10 +155,10 @@ public class DatabaseSeeder implements CommandLineRunner {
             if (roleRepository.count() == 0) {
                 logger.info("Seeding roles");
                 Role studentRole = new Role(ERole.ROLE_STUDENT);
-                Role employerRole = new Role(ERole.ROLE_EMPLOYER);
+                Role nloRole = new Role(ERole.ROLE_NLO);
                 Role adminRole = new Role(ERole.ROLE_ADMIN);
 
-                roleRepository.saveAll(Arrays.asList(studentRole, employerRole, adminRole));
+                roleRepository.saveAll(Arrays.asList(studentRole, nloRole, adminRole));
             }
         } catch (DataAccessException e) {
             logger.warn("Could not seed roles: {}", e.getMessage());
@@ -166,13 +200,13 @@ public class DatabaseSeeder implements CommandLineRunner {
                 student4.getRoles().add(studentRole);
                 userRepository.save(student4);
 
-                // Create employer user
-                User employerUser = new User("employer", "employer@ojtech.com", passwordEncoder.encode("password"));
-                employerUser.setEmailVerified(true);
-                employerUser.setRequiresPasswordReset(true); // Force password reset on first login
-                Role employerRole = getOrCreateRole(ERole.ROLE_EMPLOYER);
-                employerUser.getRoles().add(employerRole);
-                userRepository.save(employerUser);
+                // Create NLO Staff user (using ROLE_NLO for NLO Staff functionality)
+                User nloUser = new User("nlo_staff", "nlo@ojtech.com", passwordEncoder.encode("password"));
+                nloUser.setEmailVerified(true);
+                nloUser.setRequiresPasswordReset(false); // NLO staff don't need onboarding
+                Role nloRole = getOrCreateRole(ERole.ROLE_NLO);
+                nloUser.getRoles().add(nloRole);
+                userRepository.save(nloUser);
             }
         } catch (DataAccessException e) {
             logger.warn("Could not seed users: {}", e.getMessage());
@@ -258,29 +292,29 @@ public class DatabaseSeeder implements CommandLineRunner {
                     "https://sarahjohnson.com"
                 );
 
-                // Create employer profile
-                User employerUser = userRepository.findByUsername("employer")
-                        .orElseThrow(() -> new RuntimeException("User not found"));
+                // Create NLO Staff profile
+                User nloUser = userRepository.findByUsername("nlo_staff")
+                        .orElseThrow(() -> new RuntimeException("NLO user not found"));
                 
-                EmployerProfile employerProfile = new EmployerProfile();
-                employerProfile.setUser(employerUser);
-                employerProfile.setFullName("Tech Company Inc.");
-                employerProfile.setCompanyName("Tech Company Inc.");
-                employerProfile.setCompanySize("50-100");
-                employerProfile.setIndustry("Technology");
-                employerProfile.setLocation("San Francisco, CA");
-                employerProfile.setCompanyDescription("A leading technology company");
-                employerProfile.setWebsiteUrl("https://techcompany.com");
-                employerProfile.setLogoUrl("https://example.com/logo.png");
-                employerProfile.setHasCompletedOnboarding(true);
+                EmployerProfile nloProfile = new EmployerProfile();
+                nloProfile.setUser(nloUser);
+                nloProfile.setFullName("NLO Staff");
+                nloProfile.setCompanyName("Networking and Linkages Office");
+                nloProfile.setCompanySize("10-50");
+                nloProfile.setIndustry("Education");
+                nloProfile.setLocation("University Campus");
+                nloProfile.setCompanyDescription("Manages partner companies and job opportunities for students");
+                nloProfile.setWebsiteUrl("https://university.edu/nlo");
+                nloProfile.setLogoUrl("https://example.com/nlo-logo.png");
+                nloProfile.setHasCompletedOnboarding(true);
                 
                 // Add contact person information
-                employerProfile.setContactPersonName("John Smith");
-                employerProfile.setContactPersonPosition("HR Manager");
-                employerProfile.setContactPersonEmail("moronaldrin3@gmail.com");
-                employerProfile.setContactPersonPhone("555-123-4567");
+                nloProfile.setContactPersonName("NLO Administrator");
+                nloProfile.setContactPersonPosition("Linkages Officer");
+                nloProfile.setContactPersonEmail("moronaldrin3@gmail.com");
+                nloProfile.setContactPersonPhone("555-123-4567");
                 
-                employerProfileRepository.save(employerProfile);
+                employerProfileRepository.save(nloProfile);
             }
         } catch (DataAccessException e) {
             logger.warn("Could not seed profiles: {}", e.getMessage());
@@ -339,6 +373,75 @@ public class DatabaseSeeder implements CommandLineRunner {
         } catch (Exception e) {
             logger.warn("Could not create student profile for {}: {}", username, e.getMessage());
             return null;
+        }
+    }
+    
+    private void seedCompanies() {
+        try {
+            // Check if company table exists before attempting to seed
+            try {
+                companyRepository.count();
+            } catch (DataAccessException e) {
+                logger.warn("Companies table does not exist yet. Skipping company seeding.");
+                return;
+            }
+            
+            if (companyRepository.count() == 0) {
+                logger.info("Seeding companies");
+                
+                // Get NLO profile
+                User nloUser = userRepository.findByUsername("nlo_staff")
+                        .orElseThrow(() -> new RuntimeException("NLO user not found"));
+                EmployerProfile nloProfile = employerProfileRepository.findByUserId(nloUser.getId())
+                        .orElseThrow(() -> new RuntimeException("NLO profile not found"));
+                
+                // Create sample companies
+                Company company1 = new Company();
+                company1.setName("Alliance Software Inc.");
+                company1.setWebsite("https://alliancesoftware.com");
+                company1.setDescription("Leading software development company specializing in enterprise solutions");
+                company1.setLocation("Cebu City, Philippines");
+                company1.setEmail("hr@alliancesoftware.com");
+                company1.setPhone("+63-32-123-4567");
+                company1.setIndustry("Information Technology");
+                company1.setCompanySize("100-500");
+                company1.setLogoUrl("https://example.com/alliance-logo.png");
+                company1.setCreatedByNLO(nloProfile);
+                company1.setActive(true);
+                companyRepository.save(company1);
+                
+                Company company2 = new Company();
+                company2.setName("TechVenture Solutions");
+                company2.setWebsite("https://techventure.com");
+                company2.setDescription("Innovative startup focused on AI and machine learning solutions");
+                company2.setLocation("Manila, Philippines");
+                company2.setEmail("careers@techventure.com");
+                company2.setPhone("+63-2-987-6543");
+                company2.setIndustry("Artificial Intelligence");
+                company2.setCompanySize("50-100");
+                company2.setLogoUrl("https://example.com/techventure-logo.png");
+                company2.setCreatedByNLO(nloProfile);
+                company2.setActive(true);
+                companyRepository.save(company2);
+                
+                Company company3 = new Company();
+                company3.setName("Digital Marketing Pro");
+                company3.setWebsite("https://digitalmarketingpro.com");
+                company3.setDescription("Full-service digital marketing agency helping businesses grow online");
+                company3.setLocation("Davao City, Philippines");
+                company3.setEmail("jobs@digitalmarketingpro.com");
+                company3.setPhone("+63-82-456-7890");
+                company3.setIndustry("Marketing & Advertising");
+                company3.setCompanySize("20-50");
+                company3.setLogoUrl("https://example.com/dmp-logo.png");
+                company3.setCreatedByNLO(nloProfile);
+                company3.setActive(true);
+                companyRepository.save(company3);
+                
+                logger.info("Successfully seeded {} companies", 3);
+            }
+        } catch (DataAccessException e) {
+            logger.warn("Could not seed companies: {}", e.getMessage());
         }
     }
 
