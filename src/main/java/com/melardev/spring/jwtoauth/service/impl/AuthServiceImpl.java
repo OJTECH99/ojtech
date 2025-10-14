@@ -1,13 +1,16 @@
 package com.melardev.spring.jwtoauth.service.impl;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.melardev.spring.jwtoauth.dtos.responses.JwtResponse;
+import com.melardev.spring.jwtoauth.dtos.responses.MessageResponse;
+import com.melardev.spring.jwtoauth.entities.*;
+import com.melardev.spring.jwtoauth.repositories.AdminProfileRepository;
+import com.melardev.spring.jwtoauth.repositories.RoleRepository;
+import com.melardev.spring.jwtoauth.repositories.UserRepository;
+import com.melardev.spring.jwtoauth.security.jwt.JwtUtils;
+import com.melardev.spring.jwtoauth.security.services.UserDetailsImpl;
+import com.melardev.spring.jwtoauth.service.EmailService;
+import com.melardev.spring.jwtoauth.service.interfaces.AuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,20 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.melardev.spring.jwtoauth.dtos.responses.JwtResponse;
-import com.melardev.spring.jwtoauth.dtos.responses.MessageResponse;
-import com.melardev.spring.jwtoauth.entities.AdminProfile;
-import com.melardev.spring.jwtoauth.entities.ERole;
-import com.melardev.spring.jwtoauth.entities.Role;
-import com.melardev.spring.jwtoauth.entities.User;
-import com.melardev.spring.jwtoauth.repositories.AdminProfileRepository;
-import com.melardev.spring.jwtoauth.repositories.RoleRepository;
-import com.melardev.spring.jwtoauth.repositories.UserRepository;
-import com.melardev.spring.jwtoauth.security.jwt.JwtUtils;
-import com.melardev.spring.jwtoauth.security.services.UserDetailsImpl;
-import com.melardev.spring.jwtoauth.service.EmailService;
-import com.melardev.spring.jwtoauth.service.interfaces.AuthService;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional

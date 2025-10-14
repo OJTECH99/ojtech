@@ -1,6 +1,7 @@
 package com.melardev.spring.jwtoauth.controller;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.melardev.spring.jwtoauth.dtos.responses.JobMatchResponseDTO;
 import com.melardev.spring.jwtoauth.dtos.responses.JobResponseDTO;
 import com.melardev.spring.jwtoauth.dtos.responses.MessageResponse;
 import com.melardev.spring.jwtoauth.entities.Company;
@@ -77,13 +79,57 @@ public class JobController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Job> getJobById(@PathVariable UUID id) {
+    public ResponseEntity<?> getJobById(@PathVariable UUID id) {
         Optional<Job> jobOpt = jobRepository.findById(id);
         if (jobOpt.isEmpty() || !jobOpt.get().isActive()) {
             throw new ResourceNotFoundException("Job not found");
         }
         
-        return ResponseEntity.ok(jobOpt.get());
+        Job job = jobOpt.get();
+        
+        // Check if user is authenticated
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() 
+            && !"anonymousUser".equals(authentication.getPrincipal())) {
+            
+            try {
+                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                UUID userId = userDetails.getId();
+                
+                // Check if user is a student
+                Optional<StudentProfile> studentProfileOpt = studentProfileRepository.findByUserId(userId);
+                if (studentProfileOpt.isPresent()) {
+                    StudentProfile studentProfile = studentProfileOpt.get();
+                    
+                    // Create a response with only the current student's match score
+                    JobResponseDTO response = new JobResponseDTO(job);
+                    
+                    // Filter job matches to only include the current student's match
+                    if (job.getJobMatches() != null) {
+                        List<JobMatch> studentMatches = job.getJobMatches().stream()
+                            .filter(match -> match.getStudent().getId().equals(studentProfile.getId()))
+                            .collect(Collectors.toList());
+                        
+                        List<JobMatchResponseDTO> matchDTOs = studentMatches.stream()
+                            .map(JobMatchResponseDTO::new)
+                            .collect(Collectors.toList());
+                        
+                        response.setJobMatches(matchDTOs);
+                    }
+                    
+                    // Don't include applications for students viewing jobs
+                    response.setApplications(new ArrayList<>());
+                    
+                    return ResponseEntity.ok(response);
+                }
+            } catch (Exception e) {
+                // If not a student or any error, continue with default response
+                System.err.println("Error filtering job details for student: " + e.getMessage());
+            }
+        }
+        
+        // Default response (for employers or unauthenticated users)
+        return ResponseEntity.ok(job);
     }
     
     @GetMapping("/employer")
@@ -309,6 +355,26 @@ public class JobController {
         
         if (jobData.containsKey("active") && jobData.get("active") instanceof Boolean) {
             job.setActive((Boolean) jobData.get("active"));
+        }
+        
+        // Handle company association
+        if (jobData.containsKey("companyId")) {
+            if (jobData.get("companyId") != null) {
+                String companyIdStr = jobData.get("companyId").toString();
+                try {
+                    UUID companyId = UUID.fromString(companyIdStr);
+                    Optional<Company> companyOpt = companyRepository.findById(companyId);
+                    if (companyOpt.isPresent()) {
+                        job.setCompany(companyOpt.get());
+                    }
+                } catch (IllegalArgumentException e) {
+                    // Invalid UUID format, skip company association
+                    System.err.println("Invalid company ID format: " + companyIdStr);
+                }
+            } else {
+                // If companyId is explicitly set to null, remove company association
+                job.setCompany(null);
+            }
         }
         
         job = jobRepository.save(job);

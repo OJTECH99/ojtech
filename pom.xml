@@ -23,7 +23,6 @@
         <byte-buddy.version>1.14.11</byte-buddy.version>
     </properties>
 
-
     <dependencies>
         <!-- Spring Boot Starters -->
         <dependency>
@@ -166,18 +165,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
-        
-        <!-- HTTP Client for Brevo API -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-        </dependency>
-        
-        <!-- Jackson for JSON processing -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
@@ -190,8 +177,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>17</source>
-                    <target>17</target>
+                    <source>21</source>
+                    <target>21</target>
                     <excludes>
                         <exclude>**/backup/**</exclude>
                     </excludes>

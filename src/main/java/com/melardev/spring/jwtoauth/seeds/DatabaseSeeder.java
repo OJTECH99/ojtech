@@ -325,56 +325,57 @@ public class DatabaseSeeder implements CommandLineRunner {
                                              String university, String major, int graduationYear,
                                              String phoneNumber, String bio, String skills,
                                              String githubUrl, String linkedinUrl, String portfolioUrl) {
-        try {
-            User studentUser = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found: " + username));
+    try {
+        User studentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-            StudentProfile studentProfile = new StudentProfile();
-            studentProfile.setUser(studentUser);
-            studentProfile.setFullName(firstName + " " + lastName);
-            studentProfile.setFirstName(firstName);
-            studentProfile.setLastName(lastName);
-            studentProfile.setUniversity(university);
-            studentProfile.setMajor(major);
-            studentProfile.setGraduationYear(graduationYear);
-            studentProfile.setPhoneNumber(phoneNumber);
-            studentProfile.setBio(bio);
-            studentProfile.setGithubUrl(githubUrl);
-            studentProfile.setLinkedinUrl(linkedinUrl);
-            studentProfile.setPortfolioUrl(portfolioUrl);
-            studentProfile.setSkills(skills);
-            studentProfile.setAvatarUrl("https://example.com/avatar-" + username + ".jpg");
-            studentProfile.setHasCompletedOnboarding(true);
-            studentProfileRepository.save(studentProfile);
+        StudentProfile studentProfile = new StudentProfile();
+        studentProfile.setUser(studentUser);
+        studentProfile.setFullName(firstName + " " + lastName);
+        studentProfile.setFirstName(firstName);
+        studentProfile.setLastName(lastName);
+        studentProfile.setEmail(studentUser.getEmail()); // Set email from user
+        studentProfile.setUniversity(university);
+        studentProfile.setMajor(major);
+        studentProfile.setGraduationYear(graduationYear);
+        studentProfile.setPhoneNumber(phoneNumber);
+        studentProfile.setBio(bio);
+        studentProfile.setGithubUrl(githubUrl);
+        studentProfile.setLinkedinUrl(linkedinUrl);
+        studentProfile.setPortfolioUrl(portfolioUrl);
+        studentProfile.setSkills(skills);
+        studentProfile.setAvatarUrl("https://example.com/avatar-" + username + ".jpg");
+        studentProfile.setHasCompletedOnboarding(true);
+        studentProfileRepository.save(studentProfile);
+        
+        // Create CV for student
+        try {
+            CV cv = new CV();
+            cv.setStudent(studentProfile);
+            cv.setActive(true);
+            cv.setGenerated(true);
+            cv.setLastUpdated(LocalDateTime.now());
+            cv.setParsedResume("{\"seedData\": true, \"name\": \"" + firstName + " " + lastName + 
+                              "\", \"skills\": \"" + skills + "\", \"education\": \"" + university + 
+                              "\", \"major\": \"" + major + "\", \"graduationYear\": " + graduationYear + "}");
             
-            // Create CV for student
-            try {
-                CV cv = new CV();
-                cv.setStudent(studentProfile);
-                cv.setActive(true);
-                cv.setGenerated(true);
-                cv.setLastUpdated(LocalDateTime.now());
-                cv.setParsedResume("{\"seedData\": true, \"name\": \"" + firstName + " " + lastName + 
-                                  "\", \"skills\": \"" + skills + "\", \"education\": \"" + university + 
-                                  "\", \"major\": \"" + major + "\", \"graduationYear\": " + graduationYear + "}");
-                
-                CV savedCV = cvRepository.save(cv);
-                
-                if (savedCV != null && savedCV.getId() != null) {
-                    studentProfile.setActiveCvId(savedCV.getId());
-                    studentProfileRepository.save(studentProfile);
-                    logger.info("Successfully created CV for {}", username);
-                }
-            } catch (Exception e) {
-                logger.warn("Could not create CV for {}: {}", username, e.getMessage());
+            CV savedCV = cvRepository.save(cv);
+            
+            if (savedCV != null && savedCV.getId() != null) {
+                studentProfile.setActiveCvId(savedCV.getId());
+                studentProfileRepository.save(studentProfile);
+                logger.info("Successfully created CV for {}", username);
             }
-            
-            return studentProfile;
         } catch (Exception e) {
-            logger.warn("Could not create student profile for {}: {}", username, e.getMessage());
-            return null;
+            logger.warn("Could not create CV for {}: {}", username, e.getMessage());
         }
+        
+        return studentProfile;
+    } catch (Exception e) {
+        logger.warn("Could not create student profile for {}: {}", username, e.getMessage());
+        return null;
     }
+}
     
     private void seedCompanies() {
         try {

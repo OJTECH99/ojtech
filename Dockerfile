@@ -1,14 +1,17 @@
-FROM maven:3.9.9-eclipse-temurin-21 AS builder
+FROM maven:3.9.5-eclipse-temurin-21 as builder
 
 WORKDIR /app
-COPY . .
-RUN mvn clean package -DskipTests
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests=true -Dmaven.test.skip=true
 
-FROM eclipse-temurin:21-jdk-slim
+FROM eclipse-temurin:21-jre-jammy
 
 WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
 
-EXPOSE ${PORT:-8082}
+# Render uses PORT environment variable
+EXPOSE ${PORT:-8080}
 
-CMD ["java", "-jar", "-Dspring.profiles.active=prod", "app.jar"]
+# Use exec form and bind to 0.0.0.0 for Render
+CMD ["sh", "-c", "java -Dserver.port=${PORT:-8080} -Dspring.profiles.active=prod -jar app.jar"]

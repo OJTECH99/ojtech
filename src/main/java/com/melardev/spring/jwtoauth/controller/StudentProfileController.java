@@ -81,6 +81,7 @@ public class StudentProfileController {
             responseMap.put("firstName", profile.getFirstName());
             responseMap.put("lastName", profile.getLastName());
             responseMap.put("fullName", profile.getFullName());
+            responseMap.put("email", profile.getEmail());
             responseMap.put("location", profile.getLocation());
             responseMap.put("university", profile.getUniversity());
             responseMap.put("major", profile.getMajor());
@@ -373,6 +374,7 @@ public class StudentProfileController {
             responseMap.put("firstName", profile.getFirstName());
             responseMap.put("lastName", profile.getLastName());
             responseMap.put("fullName", profile.getFullName());
+            responseMap.put("email", profile.getEmail());
             responseMap.put("location", profile.getLocation());
             responseMap.put("university", profile.getUniversity());
             responseMap.put("major", profile.getMajor());

@@ -1,52 +1,36 @@
 package com.melardev.spring.jwtoauth.controller;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.melardev.spring.jwtoauth.dtos.EmailDraftDTO;
 import com.melardev.spring.jwtoauth.dtos.responses.JobApplicationResponseDTO;
 import com.melardev.spring.jwtoauth.dtos.responses.MessageResponse;
-import com.melardev.spring.jwtoauth.entities.ApplicationStatus;
-import com.melardev.spring.jwtoauth.entities.CV;
-import com.melardev.spring.jwtoauth.entities.EmployerProfile;
-import com.melardev.spring.jwtoauth.entities.Job;
-import com.melardev.spring.jwtoauth.entities.JobApplication;
-import com.melardev.spring.jwtoauth.entities.JobMatch;
-import com.melardev.spring.jwtoauth.entities.StudentEmailTracking;
-import com.melardev.spring.jwtoauth.entities.StudentProfile;
+import com.melardev.spring.jwtoauth.entities.*;
 import com.melardev.spring.jwtoauth.exceptions.BadRequestException;
 import com.melardev.spring.jwtoauth.exceptions.ResourceNotFoundException;
 import com.melardev.spring.jwtoauth.repositories.CVRepository;
 import com.melardev.spring.jwtoauth.repositories.JobApplicationRepository;
 import com.melardev.spring.jwtoauth.repositories.JobMatchRepository;
 import com.melardev.spring.jwtoauth.repositories.JobRepository;
-import com.melardev.spring.jwtoauth.repositories.StudentEmailTrackingRepository;
 import com.melardev.spring.jwtoauth.repositories.StudentProfileRepository;
+import com.melardev.spring.jwtoauth.repositories.StudentEmailTrackingRepository;
 import com.melardev.spring.jwtoauth.security.services.UserDetailsImpl;
-import com.melardev.spring.jwtoauth.service.EmailService;
 import com.melardev.spring.jwtoauth.services.CoverLetterService;
+import com.melardev.spring.jwtoauth.service.EmailService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -90,32 +74,6 @@ public class JobApplicationController {
 
         StudentProfile studentProfile = studentProfileOpt.get();
         List<JobApplication> applications = jobApplicationRepository.findByStudent(studentProfile);
-        List<JobApplicationResponseDTO> responseDTOs = applications.stream()
-            .map(JobApplicationResponseDTO::new)
-            .collect(Collectors.toList());
-        return ResponseEntity.ok(responseDTOs);
-    }
-
-    @GetMapping("/job/{jobId}")
-    @PreAuthorize("hasRole('NLO')")
-    public ResponseEntity<List<JobApplicationResponseDTO>> getJobApplications(@PathVariable UUID jobId) {
-        Optional<Job> jobOpt = jobRepository.findById(jobId);
-        if (jobOpt.isEmpty()) {
-            throw new ResourceNotFoundException("Job not found");
-        }
-
-        Job job = jobOpt.get();
-        
-        // Check if the employer owns the job
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        UUID userId = userDetails.getId();
-        
-        if (!job.getEmployer().getUser().getId().equals(userId)) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        List<JobApplication> applications = jobApplicationRepository.findByJob(job);
         List<JobApplicationResponseDTO> responseDTOs = applications.stream()
             .map(JobApplicationResponseDTO::new)
             .collect(Collectors.toList());
@@ -202,52 +160,8 @@ public class JobApplicationController {
         return ResponseEntity.ok(new JobApplicationResponseDTO(application));
     }
 
-    @PutMapping("/{applicationId}/status")
-    @PreAuthorize("hasRole('NLO')")
-    public ResponseEntity<?> updateApplicationStatus(@PathVariable UUID applicationId, @RequestBody Map<String, String> statusData) {
-        Optional<JobApplication> applicationOpt = jobApplicationRepository.findById(applicationId);
-        if (applicationOpt.isEmpty()) {
-            throw new ResourceNotFoundException("Application not found");
-        }
-
-        JobApplication application = applicationOpt.get();
-        Job job = application.getJob();
-        
-        // Check if the employer owns the job
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        UUID userId = userDetails.getId();
-        
-        if (!job.getEmployer().getUser().getId().equals(userId)) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        // Update status
-        String statusStr = statusData.get("status");
-        if (statusStr == null) {
-            throw new BadRequestException("Status is required");
-        }
-
-        try {
-            ApplicationStatus status = ApplicationStatus.valueOf(statusStr.toUpperCase());
-            application.setStatus(status);
-            
-            // Add feedback if provided
-            if (statusData.containsKey("feedback")) {
-                application.setFeedback(statusData.get("feedback"));
-            }
-            
-            application.setLastUpdatedAt(LocalDateTime.now());
-            application = jobApplicationRepository.save(application);
-            
-            return ResponseEntity.ok(new JobApplicationResponseDTO(application));
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid status value");
-        }
-    }
-
     @GetMapping("/{applicationId}")
-    @PreAuthorize("hasRole('STUDENT') or hasRole('NLO')")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<JobApplicationResponseDTO> getApplicationById(@PathVariable UUID applicationId) {
         Optional<JobApplication> applicationOpt = jobApplicationRepository.findById(applicationId);
         if (applicationOpt.isEmpty()) {
@@ -262,18 +176,9 @@ public class JobApplicationController {
         UUID userId = userDetails.getId();
         
         // Students can only view their own applications
-        if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_STUDENT"))) {
-            Optional<StudentProfile> studentProfileOpt = studentProfileRepository.findByUserId(userId);
-            if (studentProfileOpt.isEmpty() || !application.getStudent().getId().equals(studentProfileOpt.get().getId())) {
-                return ResponseEntity.badRequest().build();
-            }
-        }
-        
-        // Employers can only view applications for their jobs
-        if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_NLO"))) {
-            if (!application.getJob().getEmployer().getUser().getId().equals(userId)) {
-                return ResponseEntity.badRequest().build();
-            }
+        Optional<StudentProfile> studentProfileOpt = studentProfileRepository.findByUserId(userId);
+        if (studentProfileOpt.isEmpty() || !application.getStudent().getId().equals(studentProfileOpt.get().getId())) {
+            return ResponseEntity.badRequest().build();
         }
 
         return ResponseEntity.ok(new JobApplicationResponseDTO(application));
@@ -377,9 +282,23 @@ public class JobApplicationController {
         // Get phone from Profile.phoneNumber (primary) or fallback to StudentProfile.phone
         String studentPhone = student.getPhoneNumber() != null ? student.getPhoneNumber() : student.getPhone();
         
+        // Determine recipient email and name - prioritize company HR if available
+        String recipientEmail;
+        String recipientName;
+        
+        if (job.getCompany() != null && job.getCompany().getHrEmail() != null) {
+            // Use company HR contact if job is associated with a company
+            recipientEmail = job.getCompany().getHrEmail();
+            recipientName = job.getCompany().getHrName() != null ? job.getCompany().getHrName() : "Hiring Manager";
+        } else {
+            // Fallback to employer profile contact
+            recipientEmail = employer.getContactPersonEmail();
+            recipientName = employer.getContactPersonName();
+        }
+        
         EmailDraftDTO draft = new EmailDraftDTO(
-            employer.getContactPersonEmail(),
-            employer.getContactPersonName(),
+            recipientEmail,
+            recipientName,
             subject,
             emailBody,
             cvUrl,
@@ -452,18 +371,35 @@ public class JobApplicationController {
         // Get phone from Profile.phoneNumber (primary) or fallback to StudentProfile.phone
         String studentPhone = student.getPhoneNumber() != null ? student.getPhoneNumber() : student.getPhone();
         
+        // Determine recipient email and name - prioritize company HR if available
+        String recipientEmail;
+        String recipientName;
+        String companyName;
+        
+        if (job.getCompany() != null && job.getCompany().getHrEmail() != null) {
+            // Use company HR contact if job is associated with a company
+            recipientEmail = job.getCompany().getHrEmail();
+            recipientName = job.getCompany().getHrName() != null ? job.getCompany().getHrName() : "Hiring Manager";
+            companyName = job.getCompany().getName();
+        } else {
+            // Fallback to employer profile contact
+            recipientEmail = employer.getContactPersonEmail();
+            recipientName = employer.getContactPersonName();
+            companyName = employer.getCompanyName();
+        }
+        
         try {
             // Send email
             emailService.sendJobApplicationEmail(
-                employer.getContactPersonEmail(),
-                employer.getContactPersonName(),
+                recipientEmail,
+                recipientName,
                 studentName,
                 studentEmail,
                 studentPhone,
                 student.getUniversity(),
                 student.getMajor(),
                 job.getTitle(),
-                employer.getCompanyName(),
+                companyName,
                 application.getCoverLetter(),
                 cvUrl,
                 emailBody,
