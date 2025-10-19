@@ -347,6 +347,9 @@ public class ProfileController {
                 responseMap.put("portfolioUrl", profile.getPortfolioUrl());
                 responseMap.put("bio", profile.getBio());
                 responseMap.put("phoneNumber", profile.getPhoneNumber());
+                responseMap.put("city", profile.getCity());
+                responseMap.put("province", profile.getProvince());
+                responseMap.put("postalCode", profile.getPostalCode());
                 responseMap.put("hasCompletedOnboarding", profile.isHasCompletedOnboarding());
                 responseMap.put("role", profile.getRole());
                 
@@ -393,6 +396,7 @@ public class ProfileController {
                 StudentProfile profile = new StudentProfile();
                 profile.setUser(user);
                 profile.setRole(UserRole.STUDENT);
+                profile.setHasCompletedOnboarding(true);
                 updateProfileFields(profile, profileData);
                 StudentProfile savedProfile = studentProfileRepository.save(profile);
                 
@@ -418,6 +422,9 @@ public class ProfileController {
                 responseMap.put("portfolioUrl", savedProfile.getPortfolioUrl());
                 responseMap.put("bio", savedProfile.getBio());
                 responseMap.put("phoneNumber", savedProfile.getPhoneNumber());
+                responseMap.put("city", savedProfile.getCity());
+                responseMap.put("province", savedProfile.getProvince());
+                responseMap.put("postalCode", savedProfile.getPostalCode());
                 responseMap.put("hasCompletedOnboarding", savedProfile.isHasCompletedOnboarding());
                 responseMap.put("role", savedProfile.getRole());
                 
@@ -505,6 +512,15 @@ public class ProfileController {
             }
             if (updates.containsKey("portfolioUrl")) {
                 studentProfile.setPortfolioUrl((String) updates.get("portfolioUrl"));
+            }
+            if (updates.containsKey("city")) {
+                studentProfile.setCity((String) updates.get("city"));
+            }
+            if (updates.containsKey("province")) {
+                studentProfile.setProvince((String) updates.get("province"));
+            }
+            if (updates.containsKey("postalCode")) {
+                studentProfile.setPostalCode((String) updates.get("postalCode"));
             }
             
             // Handle GitHub projects

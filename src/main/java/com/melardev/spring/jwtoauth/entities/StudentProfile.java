@@ -105,6 +105,15 @@ public class StudentProfile extends Profile {
     @Column(name = "preojt_orientation_url")
     private String preojtOrientationUrl;
 
+    @Column(name = "city")
+    private String city;
+
+    @Column(name = "province")
+    private String province;
+
+    @Column(name = "postal_code")
+    private String postalCode;
+
     public StudentProfile() {
         super();
         setRole(UserRole.STUDENT);
@@ -225,4 +234,13 @@ public class StudentProfile extends Profile {
     
     public String getVerificationSource() { return verificationSource; }
     public void setVerificationSource(String verificationSource) { this.verificationSource = verificationSource; }
+
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+
+    public String getProvince() { return province; }
+    public void setProvince(String province) { this.province = province; }
+
+    public String getPostalCode() { return postalCode; }
+    public void setPostalCode(String postalCode) { this.postalCode = postalCode; }
 }

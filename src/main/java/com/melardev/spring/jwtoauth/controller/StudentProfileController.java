@@ -83,6 +83,9 @@ public class StudentProfileController {
             responseMap.put("fullName", profile.getFullName());
             responseMap.put("email", profile.getEmail());
             responseMap.put("location", profile.getLocation());
+            responseMap.put("city", profile.getCity());
+            responseMap.put("province", profile.getProvince());
+            responseMap.put("postalCode", profile.getPostalCode());
             responseMap.put("university", profile.getUniversity());
             responseMap.put("major", profile.getMajor());
             responseMap.put("graduationYear", profile.getGraduationYear());

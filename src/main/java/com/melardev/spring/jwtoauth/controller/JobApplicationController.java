@@ -142,7 +142,7 @@ public class JobApplicationController {
         application.setJob(job);
         application.setCv(cv);
         application.setCoverLetter(coverLetter);
-        application.setStatus(ApplicationStatus.PENDING);
+        application.setStatus(ApplicationStatus.APPLIED);
         application.setAppliedAt(LocalDateTime.now());
         application.setLastUpdatedAt(LocalDateTime.now());
 

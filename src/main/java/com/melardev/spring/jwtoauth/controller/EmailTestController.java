@@ -12,8 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.melardev.spring.jwtoauth.service.EmailService;
 
-import jakarta.mail.MessagingException;
-
 @RestController
 @RequestMapping("/api/email")
 public class EmailTestController {
@@ -36,7 +34,7 @@ public class EmailTestController {
                 ? "Test email sent successfully to " + request.getToEmail()
                 : "Email is disabled. Check console logs for details. To enable, set email.enabled=true in application.properties";
             return ResponseEntity.ok(new MessageResponse(message));
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new MessageResponse("Failed to send test email: " + e.getMessage()));
         }
@@ -53,7 +51,7 @@ public class EmailTestController {
                 ? "Test email sent successfully to " + toEmail
                 : "Email is disabled. Check console logs for details. To enable, set email.enabled=true in application.properties";
             return ResponseEntity.ok(new MessageResponse(message));
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new MessageResponse("Failed to send test email: " + e.getMessage()));
         }
