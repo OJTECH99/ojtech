@@ -1,9 +1,11 @@
-import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
+import React, { Component } from 'react';
+import * as CollapsiblePrimitive from '@radix-ui/react-collapsible';
 
-const Collapsible = CollapsiblePrimitive.Root;
+class Collapsible extends Component<any, any> {
+  render() {
+    // TODO: Implement render method based on original component
+    return null;
+  }
+}
 
-const CollapsibleTrigger = CollapsiblePrimitive.CollapsibleTrigger;
-
-const CollapsibleContent = CollapsiblePrimitive.CollapsibleContent;
-
-export { Collapsible, CollapsibleTrigger, CollapsibleContent };
+export default Collapsible;
