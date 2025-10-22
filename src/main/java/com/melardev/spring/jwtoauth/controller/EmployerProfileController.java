@@ -28,7 +28,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/employer-profiles")
+@RequestMapping("/api/nlo")
 public class EmployerProfileController {
 
     private static final Logger logger = LoggerFactory.getLogger(EmployerProfileController.class);

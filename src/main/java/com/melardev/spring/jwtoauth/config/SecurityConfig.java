@@ -1,13 +1,8 @@
 package com.melardev.spring.jwtoauth.config;
 
-import com.melardev.spring.jwtoauth.entities.User;
-import com.melardev.spring.jwtoauth.repositories.UserRepository;
-import com.melardev.spring.jwtoauth.security.jwt.AuthEntryPointJwt;
-import com.melardev.spring.jwtoauth.security.jwt.AuthTokenFilter;
-import com.melardev.spring.jwtoauth.security.oauth2.CustomOAuth2UserService;
-import com.melardev.spring.jwtoauth.security.oauth2.OAuth2AuthenticationSuccessHandler;
-import com.melardev.spring.jwtoauth.security.services.UserDetailsImpl;
-import com.melardev.spring.jwtoauth.security.services.UserDetailsServiceImpl;
+import java.util.Arrays;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,14 +12,11 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.AbstractUserDetailsAuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -36,9 +28,13 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import com.melardev.spring.jwtoauth.entities.User;
+import com.melardev.spring.jwtoauth.repositories.UserRepository;
+import com.melardev.spring.jwtoauth.security.jwt.AuthEntryPointJwt;
+import com.melardev.spring.jwtoauth.security.jwt.AuthTokenFilter;
+import com.melardev.spring.jwtoauth.security.oauth2.CustomOAuth2UserService;
+import com.melardev.spring.jwtoauth.security.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.melardev.spring.jwtoauth.security.services.UserDetailsServiceImpl;
 
 @Configuration
 @EnableWebSecurity
@@ -127,8 +123,12 @@ public class SecurityConfig {
                                 .requestMatchers("/auth/api/auth/**").permitAll()
                                 .requestMatchers("/oauth2/**").permitAll()
                                 .requestMatchers("/login/**").permitAll()
+                                .requestMatchers("/v3/api-docs/**").permitAll()
                                 .requestMatchers("/api-docs/**").permitAll()
+                                .requestMatchers("/swagger-ui/index.html").permitAll()
                                 .requestMatchers("/swagger-ui/**").permitAll()
+                                .requestMatchers("/swagger-resources/**").permitAll()
+                                .requestMatchers("/webjars/**").permitAll()
                                 .requestMatchers("/h2-console/**").permitAll()
                                 .requestMatchers("/uploads/**").permitAll()
                                 .requestMatchers("/api/public/cloudinary/**").permitAll()
@@ -170,7 +170,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:5173",
+            "http://localhost:5174",
             "http://localhost:3000", 
+            "https://ojtech-pinger.netlify.app", 
             "https://ojtech-testing.netlify.app", 
             "http://localhost:8080",
             "https://ojtech.aetherrflare.org"
@@ -193,6 +195,7 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/api/**", configuration);
         source.registerCorsConfiguration("/oauth2/**", configuration);
         source.registerCorsConfiguration("/login/**", configuration);
+         source.registerCorsConfiguration("/swagger-ui/index.html", configuration);
         return source;
     }
 }

@@ -147,11 +147,37 @@ public class JobController {
         EmployerProfile employerProfile = employerProfileOpt.get();
         List<Job> jobs = jobRepository.findByEmployer(employerProfile);
         
+        // Filter only active jobs
         List<JobResponseDTO> jobResponseDTOs = jobs.stream()
+            .filter(Job::isActive)
             .map(JobResponseDTO::new)
             .collect(Collectors.toList());
         
         return ResponseEntity.ok(jobResponseDTOs);
+    }
+    
+    @GetMapping("/employer/inactive")
+    @PreAuthorize("hasRole('NLO')")
+    public ResponseEntity<List<JobResponseDTO>> getEmployerInactiveJobs() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        UUID userId = userDetails.getId();
+
+        Optional<EmployerProfile> employerProfileOpt = employerProfileRepository.findByUserId(userId);
+        if (employerProfileOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Employer profile not found");
+        }
+
+        EmployerProfile employerProfile = employerProfileOpt.get();
+        List<Job> jobs = jobRepository.findByEmployer(employerProfile);
+        
+        // Filter only inactive jobs
+        List<JobResponseDTO> inactiveJobDTOs = jobs.stream()
+            .filter(job -> !job.isActive())
+            .map(JobResponseDTO::new)
+            .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(inactiveJobDTOs);
     }
     
     @GetMapping("/employer/{id}")
@@ -415,4 +441,38 @@ public class JobController {
         
         return ResponseEntity.ok(new MessageResponse("Job deleted successfully"));
     }
-} 
+    
+    @PutMapping("/{id}/reactivate")
+    @PreAuthorize("hasRole('NLO')")
+    public ResponseEntity<?> reactivateJob(@PathVariable UUID id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        UUID userId = userDetails.getId();
+
+        Optional<EmployerProfile> employerProfileOpt = employerProfileRepository.findByUserId(userId);
+        if (employerProfileOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Employer profile not found");
+        }
+
+        EmployerProfile employerProfile = employerProfileOpt.get();
+        
+        Optional<Job> jobOpt = jobRepository.findById(id);
+        if (jobOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Job not found");
+        }
+        
+        Job job = jobOpt.get();
+        
+        // Check if the employer owns the job
+        if (!job.getEmployer().getId().equals(employerProfile.getId())) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("You are not authorized to reactivate this job"));
+        }
+        
+        // Reactivate the job
+        job.setActive(true);
+        jobRepository.save(job);
+        
+        return ResponseEntity.ok(new MessageResponse("Job reactivated successfully"));
+    }
+}

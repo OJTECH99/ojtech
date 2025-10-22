@@ -25,6 +25,20 @@ public class JobResponseDTO {
     private LocalDateTime postedAt;
     private boolean active;
     
+    // Company information
+    private String companyName;
+    private String companyWebsite;
+    private String companyDescription;
+    private String companyLocation;
+    private String companyEmail;
+    private String companyPhone;
+    private String companyIndustry;
+    private String companySize;
+    private String companyLogoUrl;
+    private String hrName;
+    private String hrEmail;
+    private String hrPhone;
+    
     // Enhanced applications with student details
     private List<JobApplicationResponseDTO> applications = new ArrayList<>();
     
@@ -45,6 +59,22 @@ public class JobResponseDTO {
         this.currency = job.getCurrency();
         this.postedAt = job.getPostedAt();
         this.active = job.isActive();
+        
+        // Populate company information from Company entity
+        if (job.getCompany() != null) {
+            this.companyName = job.getCompany().getName();
+            this.companyWebsite = job.getCompany().getWebsite();
+            this.companyDescription = job.getCompany().getDescription();
+            this.companyLocation = job.getCompany().getLocation();
+            this.companyEmail = job.getCompany().getEmail();
+            this.companyPhone = job.getCompany().getPhone();
+            this.companyIndustry = job.getCompany().getIndustry();
+            this.companySize = job.getCompany().getCompanySize();
+            this.companyLogoUrl = job.getCompany().getLogoUrl();
+            this.hrName = job.getCompany().getHrName();
+            this.hrEmail = job.getCompany().getHrEmail();
+            this.hrPhone = job.getCompany().getHrPhone();
+        }
         
         // Convert applications to DTOs
         if (job.getApplications() != null) {
@@ -179,5 +209,101 @@ public class JobResponseDTO {
 
     public void setJobMatches(List<JobMatchResponseDTO> jobMatches) {
         this.jobMatches = jobMatches;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    public String getCompanyWebsite() {
+        return companyWebsite;
+    }
+
+    public void setCompanyWebsite(String companyWebsite) {
+        this.companyWebsite = companyWebsite;
+    }
+
+    public String getCompanyDescription() {
+        return companyDescription;
+    }
+
+    public void setCompanyDescription(String companyDescription) {
+        this.companyDescription = companyDescription;
+    }
+
+    public String getCompanyLocation() {
+        return companyLocation;
+    }
+
+    public void setCompanyLocation(String companyLocation) {
+        this.companyLocation = companyLocation;
+    }
+
+    public String getCompanyEmail() {
+        return companyEmail;
+    }
+
+    public void setCompanyEmail(String companyEmail) {
+        this.companyEmail = companyEmail;
+    }
+
+    public String getCompanyPhone() {
+        return companyPhone;
+    }
+
+    public void setCompanyPhone(String companyPhone) {
+        this.companyPhone = companyPhone;
+    }
+
+    public String getCompanyIndustry() {
+        return companyIndustry;
+    }
+
+    public void setCompanyIndustry(String companyIndustry) {
+        this.companyIndustry = companyIndustry;
+    }
+
+    public String getCompanySize() {
+        return companySize;
+    }
+
+    public void setCompanySize(String companySize) {
+        this.companySize = companySize;
+    }
+
+    public String getCompanyLogoUrl() {
+        return companyLogoUrl;
+    }
+
+    public void setCompanyLogoUrl(String companyLogoUrl) {
+        this.companyLogoUrl = companyLogoUrl;
+    }
+
+    public String getHrName() {
+        return hrName;
+    }
+
+    public void setHrName(String hrName) {
+        this.hrName = hrName;
+    }
+
+    public String getHrEmail() {
+        return hrEmail;
+    }
+
+    public void setHrEmail(String hrEmail) {
+        this.hrEmail = hrEmail;
+    }
+
+    public String getHrPhone() {
+        return hrPhone;
+    }
+
+    public void setHrPhone(String hrPhone) {
+        this.hrPhone = hrPhone;
     }
 } 

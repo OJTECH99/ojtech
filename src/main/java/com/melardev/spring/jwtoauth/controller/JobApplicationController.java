@@ -136,13 +136,13 @@ public class JobApplicationController {
         // Always generate a cover letter automatically
         String coverLetter = coverLetterService.generateCoverLetter(studentProfile.getId(), jobId, cvId);
 
-        // Create application
+        // Create application with PENDING status (will be updated to APPLIED after email is sent)
         JobApplication application = new JobApplication();
         application.setStudent(studentProfile);
         application.setJob(job);
         application.setCv(cv);
         application.setCoverLetter(coverLetter);
-        application.setStatus(ApplicationStatus.APPLIED);
+        application.setStatus(ApplicationStatus.PENDING);
         application.setAppliedAt(LocalDateTime.now());
         application.setLastUpdatedAt(LocalDateTime.now());
 
@@ -406,11 +406,12 @@ public class JobApplicationController {
                 attachments
             );
             
-            // Update application with email details
+            // Update application with email details and change status to APPLIED
             application.setEmailSent(true);
             application.setEmailSentAt(LocalDateTime.now());
             application.setEmailBody(emailBody);
             application.setEmailSubject(subject);
+            application.setStatus(ApplicationStatus.APPLIED);
             jobApplicationRepository.save(application);
             
             // Increment email count
