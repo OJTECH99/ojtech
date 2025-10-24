@@ -285,7 +285,7 @@ A comprehensive Spring Boot API for the OJTech job matching platform. This API p
 ## Project Structure
 
 ```
-com.melardev.spring.jwtoauth
+com.ojtechapi.spring.jwtoauth
 ├── config                 # Configuration classes
 ├── controller             # API endpoint controllers
 ├── dao                    # Data access objects (redundant with repositories)
