@@ -22,7 +22,7 @@ Edit the `.env` file and replace the placeholder values with your actual credent
 - **Google OAuth2**: Add your Google OAuth2 client ID and secret
 - **GitHub OAuth2**: Add your GitHub OAuth2 client ID and secret
 - **Gemini API**: Add your Google Gemini API key
-- **Email**: Configure your SMTP email credentials
+- **Email**: Configure your Brevo API credentials for email sending
 
 ### 3. Using Environment Variables
 
