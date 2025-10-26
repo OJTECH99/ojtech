@@ -1,12 +1,12 @@
 package com.ojtechapi.spring.jwtoauth.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
@@ -72,12 +72,21 @@ public class EmailService {
 
     
     public void sendUserCreationEmail(String toEmail, String username, String password, String userId) throws Exception {
+        System.out.println("📧 sendUserCreationEmail called");
+        System.out.println("   To: " + toEmail);
+        System.out.println("   Username: " + username);
+        System.out.println("   User ID: " + userId);
+        System.out.println("   Email Enabled: " + emailEnabled);
+        
         if (!emailEnabled) {
-            System.out.println("Email is disabled. Skipping user creation email to: " + toEmail);
+            System.out.println("❌ Email is disabled. Skipping user creation email to: " + toEmail);
             return;
         }
         
         String verificationUrl = baseUrl + "/api/auth/verifyEmail/" + userId;
+        System.out.println("   Verification URL: " + verificationUrl);
+        System.out.println("   Base URL: " + baseUrl);
+        
         String emailContent = String.format("""
             <html>
                 <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
@@ -110,8 +119,16 @@ public class EmailService {
             </html>
             """, toEmail, password, verificationUrl);
 
-        brevoEmailService.sendSimpleEmail(toEmail, username, "Your OJTech Account Has Been Created", emailContent);
-        System.out.println("User creation email sent successfully to: " + toEmail);
+        System.out.println("📤 Calling Brevo API to send email...");
+        try {
+            brevoEmailService.sendSimpleEmail(toEmail, username, "Your OJTech Account Has Been Created", emailContent);
+            System.out.println("✅ User creation email sent successfully to: " + toEmail);
+        } catch (Exception e) {
+            System.err.println("❌ ERROR sending user creation email:");
+            System.err.println("   Error: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // Re-throw to let caller handle it
+        }
     }
     
     public void sendJobApplicationEmail(String recipientEmail, String recipientName, 

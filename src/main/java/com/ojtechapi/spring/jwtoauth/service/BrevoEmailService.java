@@ -42,6 +42,12 @@ public class BrevoEmailService {
     public void sendEmail(String toEmail, String toName, String subject, String htmlContent, 
                          String replyToEmail, String replyToName, List<Attachment> attachments) throws Exception {
         try {
+            System.out.println("🔧 BrevoEmailService.sendEmail() called");
+            System.out.println("   To: " + toEmail);
+            System.out.println("   Subject: " + subject);
+            System.out.println("   API URL: " + brevoApiUrl);
+            System.out.println("   API Key: " + (brevoApiKey != null ? brevoApiKey.substring(0, Math.min(20, brevoApiKey.length())) + "..." : "null"));
+            
             ObjectNode emailRequest = buildEmailRequest(toEmail, toName, subject, htmlContent, 
                                                        replyToEmail, replyToName, attachments);
             
@@ -54,6 +60,9 @@ public class BrevoEmailService {
             
             // Send request
             String jsonRequest = objectMapper.writeValueAsString(emailRequest);
+            System.out.println("📨 Sending request to Brevo API...");
+            System.out.println("   Request size: " + jsonRequest.length() + " bytes");
+            
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = jsonRequest.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
@@ -101,6 +110,9 @@ public class BrevoEmailService {
     private ObjectNode buildEmailRequest(String toEmail, String toName, String subject, String htmlContent,
                                          String replyToEmail, String replyToName, List<Attachment> attachments) {
         ObjectNode request = objectMapper.createObjectNode();
+        
+        System.out.println("🔨 Building email request...");
+        System.out.println("   From Email: " + fromEmail);
         
         // Sender
         ObjectNode sender = objectMapper.createObjectNode();

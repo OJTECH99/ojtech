@@ -174,7 +174,7 @@ public class SecurityConfig {
             "http://localhost:3000", 
             "https://ojtech-pinger.netlify.app", 
             "https://ojtech-testing.netlify.app", 
-            "http://localhost:8080",
+            "http://localhost:8081",
             "https://ojtech.aetherrflare.org"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
