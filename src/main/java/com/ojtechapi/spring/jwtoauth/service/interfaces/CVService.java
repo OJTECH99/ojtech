@@ -24,6 +24,7 @@ public interface CVService {
     boolean deleteCV(UUID cvId, UUID userId);
     CV getActiveCVByStudent(UUID userId);
     String getActiveCVContentByStudent(UUID userId);
+    CV regenerateActiveCV(UUID userId);
     
     // Certification Management
     List<Certification> getCertificationsByCVId(UUID cvId, UUID userId);

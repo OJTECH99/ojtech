@@ -3,7 +3,9 @@ package com.ojtechapi.spring.jwtoauth.dtos.responses;
 import com.ojtechapi.spring.jwtoauth.entities.Company;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * DTO for Company responses
@@ -26,7 +28,7 @@ public class CompanyResponseDTO {
     private boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private UUID jobId; // ID of associated job if exists
+    private List<UUID> jobIds; // IDs of associated jobs
     
     public CompanyResponseDTO() {
     }
@@ -48,7 +50,9 @@ public class CompanyResponseDTO {
         this.active = company.isActive();
         this.createdAt = company.getCreatedAt();
         this.updatedAt = company.getUpdatedAt();
-        this.jobId = company.getJob() != null ? company.getJob().getId() : null;
+        this.jobIds = company.getJobs() != null ? 
+            company.getJobs().stream().map(job -> job.getId()).collect(Collectors.toList()) : 
+            List.of();
     }
     
     // Getters and Setters
@@ -181,11 +185,11 @@ public class CompanyResponseDTO {
         this.updatedAt = updatedAt;
     }
     
-    public UUID getJobId() {
-        return jobId;
+    public List<UUID> getJobIds() {
+        return jobIds;
     }
     
-    public void setJobId(UUID jobId) {
-        this.jobId = jobId;
+    public void setJobIds(List<UUID> jobIds) {
+        this.jobIds = jobIds;
     }
 }

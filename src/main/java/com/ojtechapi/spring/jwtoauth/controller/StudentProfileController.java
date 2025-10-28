@@ -8,6 +8,7 @@ import com.ojtechapi.spring.jwtoauth.exceptions.ResourceNotFoundException;
 import com.ojtechapi.spring.jwtoauth.repositories.*;
 import com.ojtechapi.spring.jwtoauth.security.services.UserDetailsImpl;
 import com.ojtechapi.spring.jwtoauth.service.CloudinaryService;
+import com.ojtechapi.spring.jwtoauth.service.impl.ProfileUpdateEventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,9 @@ public class StudentProfileController {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+    
+    @Autowired
+    private ProfileUpdateEventService profileUpdateEventService;
     
     @Value("${cloudinary.api-secret-preset:OJTECH}")
     private String cloudinaryPreset;
@@ -190,6 +194,10 @@ public class StudentProfileController {
         updateProfileFields(profile, profileData);
         
         profile = studentProfileRepository.save(profile);
+        
+        // Trigger async match score recalculation (CV generation is handled by frontend)
+        logger.info("Triggering async match score recalculation for user: {}", userId);
+        profileUpdateEventService.handleProfileUpdate(userId, profile.getId());
         
         return ResponseEntity.ok(profile);
     }

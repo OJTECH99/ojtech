@@ -26,6 +26,7 @@ public class JobResponseDTO {
     private boolean active;
     
     // Company information
+    private UUID companyId;
     private String companyName;
     private String companyWebsite;
     private String companyDescription;
@@ -62,6 +63,7 @@ public class JobResponseDTO {
         
         // Populate company information from Company entity
         if (job.getCompany() != null) {
+            this.companyId = job.getCompany().getId();
             this.companyName = job.getCompany().getName();
             this.companyWebsite = job.getCompany().getWebsite();
             this.companyDescription = job.getCompany().getDescription();
@@ -209,6 +211,14 @@ public class JobResponseDTO {
 
     public void setJobMatches(List<JobMatchResponseDTO> jobMatches) {
         this.jobMatches = jobMatches;
+    }
+
+    public UUID getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(UUID companyId) {
+        this.companyId = companyId;
     }
 
     public String getCompanyName() {

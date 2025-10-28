@@ -14,6 +14,9 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -180,8 +183,10 @@ public class CoverLetterService {
     private String generateBasicCoverLetter(StudentProfile student, Job job, CV cv) {
         StringBuilder coverLetter = new StringBuilder();
         
-        // Current date
-        coverLetter.append(new Date().toString()).append("\n\n");
+        // Current date in Philippine Standard Time (UTC+8)
+        ZonedDateTime philippineTime = ZonedDateTime.now(ZoneId.of("Asia/Manila"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
+        coverLetter.append(philippineTime.format(formatter)).append("\n\n");
         
         // Greeting - use employer company name
         String employerContactPersonName = job.getEmployer().getContactPersonName();

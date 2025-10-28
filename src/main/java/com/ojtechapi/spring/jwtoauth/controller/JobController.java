@@ -64,6 +64,15 @@ public class JobController {
     @Autowired
     private JobMatchService jobMatchService;
     
+    @Autowired
+    private com.ojtechapi.spring.jwtoauth.repositories.CVRepository cvRepository;
+    
+    @Autowired
+    private com.ojtechapi.spring.jwtoauth.services.CoverLetterService coverLetterService;
+    
+    @org.springframework.beans.factory.annotation.Value("${backend.base-url}")
+    private String baseUrl;
+    
     @GetMapping
     public ResponseEntity<Page<Job>> getAllJobs(
             @RequestParam(defaultValue = "0") int page,
@@ -129,7 +138,7 @@ public class JobController {
         }
         
         // Default response (for employers or unauthenticated users)
-        return ResponseEntity.ok(job);
+        return ResponseEntity.ok(new JobResponseDTO(job));
     }
     
     @GetMapping("/employer")
@@ -474,5 +483,94 @@ public class JobController {
         jobRepository.save(job);
         
         return ResponseEntity.ok(new MessageResponse("Job reactivated successfully"));
+    }
+    
+    @GetMapping("/{id}/prepare-email-draft")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<?> prepareEmailDraftForJob(@PathVariable UUID id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        UUID userId = userDetails.getId();
+        
+        Optional<StudentProfile> studentProfileOpt = studentProfileRepository.findByUserId(userId);
+        if (studentProfileOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Student profile not found");
+        }
+        
+        StudentProfile student = studentProfileOpt.get();
+        
+        Optional<Job> jobOpt = jobRepository.findById(id);
+        if (jobOpt.isEmpty() || !jobOpt.get().isActive()) {
+            throw new ResourceNotFoundException("Job not found");
+        }
+        
+        Job job = jobOpt.get();
+        NLOProfile employer = job.getEmployer();
+        
+        // Get student's active CV
+        UUID cvId = student.getActiveCvId();
+        if (cvId == null) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "No active CV found. Please set an active CV in your profile."));
+        }
+        
+        Optional<com.ojtechapi.spring.jwtoauth.entities.CV> cvOpt = cvRepository.findById(cvId);
+        if (cvOpt.isEmpty()) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "CV not found."));
+        }
+        
+        com.ojtechapi.spring.jwtoauth.entities.CV cv = cvOpt.get();
+        
+        // Generate cover letter
+        String coverLetter = coverLetterService.generateCoverLetter(student.getId(), id, cvId);
+        
+        // Build email draft
+        String studentName = student.getFirstName() + " " + student.getLastName();
+        String emailBody = generateEmailBody(studentName, job.getTitle(), coverLetter);
+        String subject = "Job Application for " + job.getTitle() + " - " + studentName;
+        
+        // Generate CV view URL
+        String cvUrl = baseUrl + "/api/cvs/" + cv.getId() + "/view";
+        
+        // Get email from User entity or fallback
+        String studentEmail = student.getUser() != null ? student.getUser().getEmail() : student.getEmail();
+        String studentPhone = student.getPhoneNumber() != null ? student.getPhoneNumber() : student.getPhone();
+        
+        // Determine recipient email and name
+        String recipientEmail;
+        String recipientName;
+        
+        if (job.getCompany() != null && job.getCompany().getHrEmail() != null) {
+            recipientEmail = job.getCompany().getHrEmail();
+            recipientName = job.getCompany().getHrName() != null ? job.getCompany().getHrName() : "Hiring Manager";
+        } else {
+            recipientEmail = employer.getContactPersonEmail();
+            recipientName = employer.getContactPersonName();
+        }
+        
+        com.ojtechapi.spring.jwtoauth.dtos.EmailDraftDTO draft = new com.ojtechapi.spring.jwtoauth.dtos.EmailDraftDTO(
+            recipientEmail,
+            recipientName,
+            subject,
+            emailBody,
+            cvUrl,
+            studentName,
+            studentEmail,
+            studentPhone,
+            student.getUniversity(),
+            student.getMajor()
+        );
+        
+        return ResponseEntity.ok(draft);
+    }
+    
+    private String generateEmailBody(String studentName, String jobTitle, String coverLetter) {
+        return String.format(
+            "I am writing to express my interest in the %s position.\n\n%s\n\n" +
+            "I have attached my CV for your review. I would welcome the opportunity to discuss how my skills align with your needs.\n\n" +
+            "Thank you for considering my application.\n\nBest regards,\n%s",
+            jobTitle, coverLetter != null ? coverLetter : "Please find my application materials attached.", studentName
+        );
     }
 }

@@ -247,7 +247,11 @@ public class CVController {
                 
                 // Trigger job matching for the student
                 try {
-                    // Run job matching with no minimum score filter
+                    // First, recalculate all existing matches with updated CV data
+                    jobMatchService.recalculateMatchesForStudent(student.getId());
+                    System.out.println("Recalculated existing job matches for student: " + student.getId());
+                    
+                    // Then, find new matches for jobs that don't have matches yet
                     jobMatchService.findMatchesForStudent(student.getId(), null);
                     System.out.println("Job matching completed successfully for student: " + student.getId());
                 } catch (Exception e) {
@@ -285,7 +289,11 @@ public class CVController {
         
         // Trigger job matching for the student
         try {
-            // Run job matching with no minimum score filter
+            // First, recalculate all existing matches with updated CV data
+            jobMatchService.recalculateMatchesForStudent(student.getId());
+            System.out.println("Recalculated existing job matches for student: " + student.getId());
+            
+            // Then, find new matches for jobs that don't have matches yet
             jobMatchService.findMatchesForStudent(student.getId(), null);
             System.out.println("Job matching completed successfully for student: " + student.getId());
         } catch (Exception e) {
@@ -331,7 +339,11 @@ public class CVController {
         
         // Trigger job matching for the student after CV content update
         try {
-            // Run job matching with no minimum score filter
+            // First, recalculate all existing matches with updated CV data
+            jobMatchService.recalculateMatchesForStudent(cv.getStudent().getId());
+            System.out.println("Recalculated existing job matches after CV content update for student: " + cv.getStudent().getId());
+            
+            // Then, find new matches for jobs that don't have matches yet
             jobMatchService.findMatchesForStudent(cv.getStudent().getId(), null);
             System.out.println("Job matching completed successfully after CV content update for student: " + cv.getStudent().getId());
         } catch (Exception e) {
@@ -376,7 +388,11 @@ public class CVController {
         
         // Trigger job matching for the student after CV HTML content update
         try {
-            // Run job matching with no minimum score filter
+            // First, recalculate all existing matches with updated CV data
+            jobMatchService.recalculateMatchesForStudent(cv.getStudent().getId());
+            System.out.println("Recalculated existing job matches after CV HTML content update for student: " + cv.getStudent().getId());
+            
+            // Then, find new matches for jobs that don't have matches yet
             jobMatchService.findMatchesForStudent(cv.getStudent().getId(), null);
             System.out.println("Job matching completed successfully after CV HTML content update for student: " + cv.getStudent().getId());
         } catch (Exception e) {

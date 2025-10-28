@@ -43,6 +43,7 @@ import com.ojtechapi.spring.jwtoauth.repositories.UserRepository;
 import com.ojtechapi.spring.jwtoauth.security.services.UserDetailsImpl;
 import com.ojtechapi.spring.jwtoauth.security.utils.SecurityUtils;
 import com.ojtechapi.spring.jwtoauth.service.CloudinaryService;
+import com.ojtechapi.spring.jwtoauth.service.impl.ProfileUpdateEventService;
 
 @RestController
 @RequestMapping("/api/profiles")
@@ -64,6 +65,9 @@ public class ProfileController {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+    
+    @Autowired
+    private ProfileUpdateEventService profileUpdateEventService;
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUserProfile() {
@@ -287,8 +291,13 @@ public class ProfileController {
         if (studentProfileOpt.isPresent()) {
             StudentProfile profile = studentProfileOpt.get();
             updateProfileFields(profile, updates);
-            studentProfileRepository.save(profile);
-            return ResponseEntity.ok(profile);
+            StudentProfile savedProfile = studentProfileRepository.save(profile);
+            
+            // Trigger async match score recalculation for student profiles (CV generation is handled by frontend)
+            logger.info("Triggering async match score recalculation for student user: {}", userId);
+            profileUpdateEventService.handleProfileUpdate(userId, savedProfile.getId());
+            
+            return ResponseEntity.ok(savedProfile);
         }
 
         // Check if user has an employer profile

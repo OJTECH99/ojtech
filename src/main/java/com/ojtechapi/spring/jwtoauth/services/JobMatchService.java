@@ -41,6 +41,9 @@ public class JobMatchService {
     @Autowired
     private CVRepository cvRepository;
 
+     @Value("${backend.base-url}")
+    private String baseUrl;
+
     @Value("${gemini.api.key}")
     private String geminiApiKey;
 
@@ -66,16 +69,12 @@ public class JobMatchService {
             }
         }
         
-        System.out.println("Found " + activeJobs.size() + " active jobs to process");
-        
         // Get existing job matches for this student
         List<JobMatch> existingMatches = jobMatchRepository.findByStudentIdOrderByMatchScoreDesc(studentId);
         Set<UUID> matchedJobIds = new HashSet<>();
         for (JobMatch match : existingMatches) {
             matchedJobIds.add(match.getJob().getId());
         }
-        
-        System.out.println("Student already has " + matchedJobIds.size() + " job matches");
         
         List<JobMatch> newMatches = new ArrayList<>();
         
@@ -87,19 +86,14 @@ public class JobMatchService {
         
         // Extract student skills as a list
         List<String> studentSkills = parseSkills(student.getSkills());
-        System.out.println("Student skills: " + String.join(", ", studentSkills));
         
         // Process each job and wait for AI response
         for (Job job : activeJobs) {
             try {
                 // Skip jobs that already have a match with this student
                 if (matchedJobIds.contains(job.getId())) {
-                    System.out.println("Skipping job: " + job.getTitle() + " (ID: " + job.getId() + ") - already matched");
                     continue;
                 }
-                
-                System.out.println("Processing job: " + job.getTitle() + " (ID: " + job.getId() + ")");
-                System.out.println("Job required skills: " + job.getRequiredSkills());
                 
                 // Parse job skills
                 List<String> jobSkills = parseSkills(job.getRequiredSkills());
@@ -142,11 +136,16 @@ public class JobMatchService {
                     detailedAnalysis.put("experiencesAnalysis", experiencesAnalysis);
                 }
                 
+                // Analyze bio if available using NLP
+                String bioAnalysis = null;
+                if (student.getBio() != null && !student.getBio().isEmpty()) {
+                    bioAnalysis = analyzeBioWithNLP(student.getBio(), jobSkills, job);
+                    detailedAnalysis.put("bioAnalysis", bioAnalysis);
+                }
+                
                 // Now calculate match score using ALL available analyses
                 Double matchScore = calculateMatchScoreWithAllData(student, studentSkills, activeCv, job, 
-                    githubAnalysis, portfolioAnalysis, certificationsAnalysis, experiencesAnalysis);
-                
-                System.out.println("Match score calculated: " + matchScore);
+                    githubAnalysis, portfolioAnalysis, certificationsAnalysis, experiencesAnalysis, bioAnalysis);
                 
                 // Create job match
                 JobMatch jobMatch = new JobMatch(job, student, matchScore);
@@ -165,8 +164,6 @@ public class JobMatchService {
                 // Save to database
                 JobMatch savedMatch = jobMatchRepository.save(jobMatch);
                 newMatches.add(savedMatch);
-                
-                System.out.println("Job match saved with ID: " + savedMatch.getId());
             } catch (Exception e) {
                 System.err.println("Error processing job " + job.getId() + ": " + e.getMessage());
                 e.printStackTrace();
@@ -175,8 +172,6 @@ public class JobMatchService {
         
         // Sort matches by score (highest first)
         newMatches.sort((a, b) -> b.getMatchScore().compareTo(a.getMatchScore()));
-        
-        System.out.println("Total new matches found: " + newMatches.size());
         
         // Combine existing and new matches if needed
         if (minScore != null) {
@@ -241,7 +236,7 @@ public class JobMatchService {
     private List<Job> fetchJobsFromApi() {
         try {
             ResponseEntity<List<Job>> response = restTemplate.exchange(
-                "http://localhost:8080/api/jobs",
+                baseUrl + "/api/jobs",
                 HttpMethod.GET,
                 null,
                 new ParameterizedTypeReference<List<Job>>() {}
@@ -258,7 +253,109 @@ public class JobMatchService {
     }
     
     public List<JobMatch> getStudentMatches(UUID studentId) {
-        return jobMatchRepository.findByStudentIdOrderByMatchScoreDesc(studentId);
+        List<JobMatch> allMatches = jobMatchRepository.findByStudentIdOrderByMatchScoreDesc(studentId);
+        // Filter to only return matches with 60% or above match score
+        return allMatches.stream()
+                .filter(match -> match.getMatchScore() != null && match.getMatchScore() >= 60.0)
+                .collect(java.util.stream.Collectors.toList());
+    }
+    
+    /**
+     * Recalculates match scores for all existing job matches of a student.
+     * This method is called when a student updates their profile to ensure
+     * match scores reflect the latest profile data.
+     * 
+     * @param studentId The ID of the student whose matches should be recalculated
+     */
+    public void recalculateMatchesForStudent(UUID studentId) {
+        StudentProfile student = studentProfileRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+        
+        // Get all existing job matches for this student
+        List<JobMatch> existingMatches = jobMatchRepository.findByStudentIdOrderByMatchScoreDesc(studentId);
+        
+        if (existingMatches.isEmpty()) {
+            System.out.println("No existing matches found for student " + studentId);
+            return;
+        }
+        
+        System.out.println("Recalculating " + existingMatches.size() + " job matches for student " + studentId);
+        
+        // Get student's active CV
+        CV activeCv = null;
+        if (student.getActiveCvId() != null) {
+            activeCv = cvRepository.findById(student.getActiveCvId()).orElse(null);
+        }
+        
+        // Extract student skills
+        List<String> studentSkills = parseSkills(student.getSkills());
+        
+        // Recalculate each match
+        for (JobMatch match : existingMatches) {
+            try {
+                Job job = match.getJob();
+                
+                // Skip if job is no longer active
+                if (!job.isActive()) {
+                    System.out.println("Skipping inactive job: " + job.getId());
+                    continue;
+                }
+                
+                // Parse job skills
+                List<String> jobSkills = parseSkills(job.getRequiredSkills());
+                
+                // Collect all analyses
+                String githubAnalysis = null;
+                if (student.getGithubUrl() != null || student.getGithubProjects() != null) {
+                    githubAnalysis = analyzeGitHubProjects(
+                        student.getGithubUrl(), 
+                        student.getGithubProjects(), 
+                        jobSkills);
+                }
+                
+                String portfolioAnalysis = null;
+                if (student.getPortfolioUrl() != null) {
+                    portfolioAnalysis = analyzePortfolio(student.getPortfolioUrl(), jobSkills);
+                }
+                
+                String certificationsAnalysis = null;
+                if (student.getCertifications() != null && !student.getCertifications().isEmpty()) {
+                    certificationsAnalysis = analyzeCertifications(student.getCertifications(), jobSkills);
+                }
+                
+                String experiencesAnalysis = null;
+                if (student.getExperiences() != null && !student.getExperiences().isEmpty()) {
+                    experiencesAnalysis = analyzeWorkExperience(student.getExperiences(), jobSkills);
+                }
+                
+                String bioAnalysis = null;
+                if (student.getBio() != null && !student.getBio().isEmpty()) {
+                    bioAnalysis = analyzeBioWithNLP(student.getBio(), jobSkills, job);
+                }
+                
+                // Calculate new match score
+                Double newMatchScore = calculateMatchScoreWithAllData(student, studentSkills, activeCv, job, 
+                    githubAnalysis, portfolioAnalysis, certificationsAnalysis, experiencesAnalysis, bioAnalysis);
+                
+                // Generate new match details
+                String newMatchDetails = generateMatchDetails(student, studentSkills, activeCv, job);
+                
+                // Update the match
+                match.setMatchScore(newMatchScore);
+                match.setMatchDetails(newMatchDetails);
+                match.setUpdatedAt(LocalDateTime.now());
+                
+                jobMatchRepository.save(match);
+                
+                System.out.println("Updated match for job " + job.getId() + " - New score: " + newMatchScore);
+                
+            } catch (Exception e) {
+                System.err.println("Error recalculating match for job " + match.getJob().getId() + ": " + e.getMessage());
+                // Continue with next match even if one fails
+            }
+        }
+        
+        System.out.println("Completed recalculating matches for student " + studentId);
     }
     
     private Double calculateMatchScore(StudentProfile student, List<String> studentSkills, CV cv, Job job) {
@@ -355,13 +452,6 @@ public class JobMatchService {
         double directMatchPercentage = jobSkills.isEmpty() ? 0 : 
             (totalMatches / jobSkills.size()) * 100;
         
-        System.out.println("Enhanced skill match calculation:");
-        System.out.println("- Direct matches: " + directMatches.size() + " x " + directMatchWeight);
-        System.out.println("- Related matches: " + relatedMatches.size() + " x " + relatedMatchWeight);
-        System.out.println("- Framework-language matches: " + frameworkLanguageMatches.size() + " x " + frameworkLanguageWeight);
-        System.out.println("- Total weighted matches: " + totalMatches + " / " + jobSkills.size());
-        System.out.println("- Match percentage: " + Math.round(directMatchPercentage) + "%");
-        
         // Special case for Java, Spring Boot, and React skills
         boolean hasJava = false;
         boolean hasSpring = false;
@@ -390,8 +480,6 @@ public class JobMatchService {
             (hasSpring && jobNeedsSpring) && 
             (hasReact && jobNeedsReact)) {
             directMatchPercentage = Math.max(directMatchPercentage, 60.0);
-            System.out.println("Applying special case for Java, Spring Boot, and React skills. Adjusted score: " + 
-                Math.round(directMatchPercentage) + "%");
         }
         
         // Incorporate additional profile elements to boost score
@@ -400,30 +488,25 @@ public class JobMatchService {
         // Check for GitHub projects
         if (student.getGithubUrl() != null && !student.getGithubUrl().isEmpty()) {
             additionalBoost += 5.0;
-            System.out.println("Adding GitHub projects boost: +5%");
         }
         
         // Check for portfolio
         if (student.getPortfolioUrl() != null && !student.getPortfolioUrl().isEmpty()) {
             additionalBoost += 5.0;
-            System.out.println("Adding portfolio boost: +5%");
         }
         
         // Check for certifications
         if (student.getCertifications() != null && !student.getCertifications().isEmpty()) {
             additionalBoost += 5.0;
-            System.out.println("Adding certifications boost: +5%");
         }
         
         // Check for work experience
         if (student.getExperiences() != null && !student.getExperiences().isEmpty()) {
             additionalBoost += 5.0;
-            System.out.println("Adding work experience boost: +5%");
         }
         
         // Apply the boost, but ensure we don't exceed 100%
         directMatchPercentage = Math.min(100.0, directMatchPercentage + additionalBoost);
-        System.out.println("Final match score after boosts: " + Math.round(directMatchPercentage) + "%");
         
         // If we have a good direct match (over 40%), we can return that
         if (directMatchPercentage >= 40) {
@@ -437,10 +520,7 @@ public class JobMatchService {
         }
         
         // Otherwise, use AI for a more nuanced analysis
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-goog-api-key", geminiApiKey);
+        HttpHeaders headers = createGeminiHeaders();
         
         Map<String, Object> requestBody = new HashMap<>();
         List<Map<String, Object>> contents = new ArrayList<>();
@@ -541,37 +621,19 @@ public class JobMatchService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            System.out.println("Sending request to Gemini API for NLP-enhanced match score calculation");
-            Map<String, Object> response = restTemplate.postForObject(
-                GEMINI_API_URL, entity, Map.class);
+            Map<String, Object> response = restTemplate.postForObject(GEMINI_API_URL, entity, Map.class);
+            String scoreText = extractGeminiResponse(response);
             
-            if (response != null && response.containsKey("candidates")) {
-                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-                if (!candidates.isEmpty()) {
-                    Map<String, Object> candidate = candidates.get(0);
-                    List<Map<String, Object>> contentList = (List<Map<String, Object>>) candidate.get("content");
-                    if (!contentList.isEmpty()) {
-                        Map<String, Object> contentItem = contentList.get(0);
-                        List<Map<String, Object>> responseParts = (List<Map<String, Object>>) contentItem.get("parts");
-                        if (!responseParts.isEmpty()) {
-                            String scoreText = (String) responseParts.get(0).get("text");
-                            System.out.println("Received NLP-enhanced score from AI: " + scoreText);
-                            try {
-                                // Parse as double to handle any decimal responses, then ensure it's in range 1-100
-                                double score = Double.parseDouble(scoreText.trim());
-                                // Ensure the score is within the 1-100 range
-                                return Math.min(100.0, Math.max(1.0, score));
-                            } catch (NumberFormatException e) {
-                                System.err.println("Error parsing score from AI: " + e.getMessage());
-                                return Math.max(directMatchPercentage, 1.0); // Fall back to direct match
-                            }
-                        }
-                    }
+            if (scoreText != null) {
+                try {
+                    double score = Double.parseDouble(scoreText.trim());
+                    return Math.min(100.0, Math.max(1.0, score));
+                } catch (NumberFormatException e) {
+                    System.err.println("Error parsing score from AI: " + e.getMessage());
+                    return Math.max(directMatchPercentage, 1.0);
                 }
-                logGeminiApiResponseError("match score calculation", response);
-            } else {
-                logGeminiApiResponseError("match score calculation", response);
             }
+            logGeminiApiResponseError("match score calculation", response);
         } catch (Exception e) {
             logGeminiApiError("match score calculation", e);
         }
@@ -587,10 +649,7 @@ public class JobMatchService {
             return generateBasicMatchDetails(student, studentSkills, cv, job);
         }
         
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-goog-api-key", geminiApiKey);
+        HttpHeaders headers = createGeminiHeaders();
         
         Map<String, Object> requestBody = new HashMap<>();
         List<Map<String, Object>> contents = new ArrayList<>();
@@ -710,33 +769,16 @@ public class JobMatchService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            System.out.println("Calling Gemini API for overall match analysis with NLP enhancements...");
-            Map<String, Object> response = restTemplate.postForObject(
-                GEMINI_API_URL, entity, Map.class);
+            Map<String, Object> response = restTemplate.postForObject(GEMINI_API_URL, entity, Map.class);
+            String details = extractGeminiResponse(response);
             
-            if (response != null && response.containsKey("candidates")) {
-                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-                if (!candidates.isEmpty()) {
-                    Map<String, Object> candidate = candidates.get(0);
-                    List<Map<String, Object>> contentList = (List<Map<String, Object>>) candidate.get("content");
-                    if (!contentList.isEmpty()) {
-                        Map<String, Object> contentItem = contentList.get(0);
-                        List<Map<String, Object>> responseParts = (List<Map<String, Object>>) contentItem.get("parts");
-                        if (!responseParts.isEmpty()) {
-                            String details = (String) responseParts.get(0).get("text");
-                            // Limit to 2000 characters (column limit)
-                            if (details.length() > 2000) {
-                                details = details.substring(0, 1997) + "...";
-                            }
-                            System.out.println("Successfully received NLP-enhanced match analysis from Gemini API");
-                            return details;
-                        }
-                    }
+            if (details != null) {
+                if (details.length() > 2000) {
+                    details = details.substring(0, 1997) + "...";
                 }
-                logGeminiApiResponseError("match details", response);
-            } else {
-                logGeminiApiResponseError("match details", response);
+                return details;
             }
+            logGeminiApiResponseError("match details", response);
         } catch (Exception e) {
             logGeminiApiError("match details", e);
         }
@@ -1041,17 +1083,13 @@ public class JobMatchService {
     }
     
     public String generateSkillMatchAnalysis(List<String> studentSkills, List<String> jobSkills) {
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-goog-api-key", geminiApiKey);
-        
         // Check if API key is configured
         if (geminiApiKey == null || geminiApiKey.trim().isEmpty()) {
             logGeminiApiMissingKeyError("skill match");
             return generateBasicSkillMatchAnalysis(studentSkills, jobSkills);
         }
         
+        HttpHeaders headers = createGeminiHeaders();
         Map<String, Object> requestBody = new HashMap<>();
         List<Map<String, Object>> contents = new ArrayList<>();
         Map<String, Object> content = new HashMap<>();
@@ -1118,29 +1156,13 @@ public class JobMatchService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            System.out.println("Calling Gemini API for NLP-enhanced skill match analysis...");
-            Map<String, Object> response = restTemplate.postForObject(
-                GEMINI_API_URL, entity, Map.class);
+            Map<String, Object> response = restTemplate.postForObject(GEMINI_API_URL, entity, Map.class);
+            String analysis = extractGeminiResponse(response);
             
-            if (response != null && response.containsKey("candidates")) {
-                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-                if (!candidates.isEmpty()) {
-                    Map<String, Object> candidate = candidates.get(0);
-                    List<Map<String, Object>> contentList = (List<Map<String, Object>>) candidate.get("content");
-                    if (!contentList.isEmpty()) {
-                        Map<String, Object> contentItem = contentList.get(0);
-                        List<Map<String, Object>> responseParts = (List<Map<String, Object>>) contentItem.get("parts");
-                        if (!responseParts.isEmpty()) {
-                            String analysis = (String) responseParts.get(0).get("text");
-                            System.out.println("Successfully received NLP-enhanced skill match analysis from Gemini API");
-                            return analysis;
-                        }
-                    }
-                }
-                logGeminiApiResponseError("skill match", response);
-            } else {
-                logGeminiApiResponseError("skill match", response);
+            if (analysis != null) {
+                return analysis;
             }
+            logGeminiApiResponseError("skill match", response);
         } catch (Exception e) {
             logGeminiApiError("skill match", e);
         }
@@ -1394,11 +1416,7 @@ public class JobMatchService {
             return generateBasicGitHubAnalysis(githubUrl, githubProjects, jobSkills);
         }
         
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-goog-api-key", geminiApiKey);
-        
+        HttpHeaders headers = createGeminiHeaders();
         Map<String, Object> requestBody = new HashMap<>();
         List<Map<String, Object>> contents = new ArrayList<>();
         Map<String, Object> content = new HashMap<>();
@@ -1466,29 +1484,13 @@ public class JobMatchService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            System.out.println("Calling Gemini API for NLP-enhanced GitHub project analysis...");
-            Map<String, Object> response = restTemplate.postForObject(
-                GEMINI_API_URL, entity, Map.class);
+            Map<String, Object> response = restTemplate.postForObject(GEMINI_API_URL, entity, Map.class);
+            String analysis = extractGeminiResponse(response);
             
-            if (response != null && response.containsKey("candidates")) {
-                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-                if (!candidates.isEmpty()) {
-                    Map<String, Object> candidate = candidates.get(0);
-                    List<Map<String, Object>> contentList = (List<Map<String, Object>>) candidate.get("content");
-                    if (!contentList.isEmpty()) {
-                        Map<String, Object> contentItem = contentList.get(0);
-                        List<Map<String, Object>> responseParts = (List<Map<String, Object>>) contentItem.get("parts");
-                        if (!responseParts.isEmpty()) {
-                            String analysis = (String) responseParts.get(0).get("text");
-                            System.out.println("Successfully received NLP-enhanced GitHub analysis from Gemini API");
-                            return analysis;
-                        }
-                    }
-                }
-                logGeminiApiResponseError("GitHub project", response);
-            } else {
-                logGeminiApiResponseError("GitHub project", response);
+            if (analysis != null) {
+                return analysis;
             }
+            logGeminiApiResponseError("GitHub project", response);
         } catch (Exception e) {
             logGeminiApiError("GitHub project", e);
         }
@@ -1700,11 +1702,7 @@ public class JobMatchService {
             return generateBasicPortfolioAnalysis(portfolioUrl, jobSkills);
         }
         
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-goog-api-key", geminiApiKey);
-        
+        HttpHeaders headers = createGeminiHeaders();
         Map<String, Object> requestBody = new HashMap<>();
         List<Map<String, Object>> contents = new ArrayList<>();
         Map<String, Object> content = new HashMap<>();
@@ -1765,29 +1763,13 @@ public class JobMatchService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            System.out.println("Calling Gemini API for NLP-enhanced portfolio analysis...");
-            Map<String, Object> response = restTemplate.postForObject(
-                GEMINI_API_URL, entity, Map.class);
+            Map<String, Object> response = restTemplate.postForObject(GEMINI_API_URL, entity, Map.class);
+            String analysis = extractGeminiResponse(response);
             
-            if (response != null && response.containsKey("candidates")) {
-                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-                if (!candidates.isEmpty()) {
-                    Map<String, Object> candidate = candidates.get(0);
-                    List<Map<String, Object>> contentList = (List<Map<String, Object>>) candidate.get("content");
-                    if (!contentList.isEmpty()) {
-                        Map<String, Object> contentItem = contentList.get(0);
-                        List<Map<String, Object>> responseParts = (List<Map<String, Object>>) contentItem.get("parts");
-                        if (!responseParts.isEmpty()) {
-                            String analysis = (String) responseParts.get(0).get("text");
-                            System.out.println("Successfully received NLP-enhanced portfolio analysis from Gemini API");
-                            return analysis;
-                        }
-                    }
-                }
-                logGeminiApiResponseError("portfolio", response);
-            } else {
-                logGeminiApiResponseError("portfolio", response);
+            if (analysis != null) {
+                return analysis;
             }
+            logGeminiApiResponseError("portfolio", response);
         } catch (Exception e) {
             logGeminiApiError("portfolio", e);
         }
@@ -1906,11 +1888,7 @@ public class JobMatchService {
             return generateBasicCertificationsAnalysis(certifications, jobSkills);
         }
         
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-goog-api-key", geminiApiKey);
-        
+        HttpHeaders headers = createGeminiHeaders();
         Map<String, Object> requestBody = new HashMap<>();
         List<Map<String, Object>> contents = new ArrayList<>();
         Map<String, Object> content = new HashMap<>();
@@ -1979,29 +1957,13 @@ public class JobMatchService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            System.out.println("Calling Gemini API for NLP-enhanced certifications analysis...");
-            Map<String, Object> response = restTemplate.postForObject(
-                GEMINI_API_URL, entity, Map.class);
+            Map<String, Object> response = restTemplate.postForObject(GEMINI_API_URL, entity, Map.class);
+            String analysis = extractGeminiResponse(response);
             
-            if (response != null && response.containsKey("candidates")) {
-                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-                if (!candidates.isEmpty()) {
-                    Map<String, Object> candidate = candidates.get(0);
-                    List<Map<String, Object>> contentList = (List<Map<String, Object>>) candidate.get("content");
-                    if (!contentList.isEmpty()) {
-                        Map<String, Object> contentItem = contentList.get(0);
-                        List<Map<String, Object>> responseParts = (List<Map<String, Object>>) contentItem.get("parts");
-                        if (!responseParts.isEmpty()) {
-                            String analysis = (String) responseParts.get(0).get("text");
-                            System.out.println("Successfully received NLP-enhanced certifications analysis from Gemini API");
-                            return analysis;
-                        }
-                    }
-                }
-                logGeminiApiResponseError("certifications", response);
-            } else {
-                logGeminiApiResponseError("certifications", response);
+            if (analysis != null) {
+                return analysis;
             }
+            logGeminiApiResponseError("certifications", response);
         } catch (Exception e) {
             logGeminiApiError("certifications", e);
         }
@@ -2165,11 +2127,7 @@ public class JobMatchService {
             return generateBasicWorkExperienceAnalysis(experiences, jobSkills);
         }
         
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-goog-api-key", geminiApiKey);
-        
+        HttpHeaders headers = createGeminiHeaders();
         Map<String, Object> requestBody = new HashMap<>();
         List<Map<String, Object>> contents = new ArrayList<>();
         Map<String, Object> content = new HashMap<>();
@@ -2249,29 +2207,13 @@ public class JobMatchService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            System.out.println("Calling Gemini API for NLP-enhanced work experience analysis...");
-            Map<String, Object> response = restTemplate.postForObject(
-                GEMINI_API_URL, entity, Map.class);
+            Map<String, Object> response = restTemplate.postForObject(GEMINI_API_URL, entity, Map.class);
+            String analysis = extractGeminiResponse(response);
             
-            if (response != null && response.containsKey("candidates")) {
-                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-                if (!candidates.isEmpty()) {
-                    Map<String, Object> candidate = candidates.get(0);
-                    List<Map<String, Object>> contentList = (List<Map<String, Object>>) candidate.get("content");
-                    if (!contentList.isEmpty()) {
-                        Map<String, Object> contentItem = contentList.get(0);
-                        List<Map<String, Object>> responseParts = (List<Map<String, Object>>) contentItem.get("parts");
-                        if (!responseParts.isEmpty()) {
-                            String analysis = (String) responseParts.get(0).get("text");
-                            System.out.println("Successfully received NLP-enhanced work experience analysis from Gemini API");
-                            return analysis;
-                        }
-                    }
-                }
-                logGeminiApiResponseError("work experience", response);
-            } else {
-                logGeminiApiResponseError("work experience", response);
+            if (analysis != null) {
+                return analysis;
             }
+            logGeminiApiResponseError("work experience", response);
         } catch (Exception e) {
             logGeminiApiError("work experience", e);
         }
@@ -2451,6 +2393,263 @@ public class JobMatchService {
         
         return analysis.toString();
     }
+    
+    /**
+     * Analyzes student bio using NLP to extract skills, personality traits, career goals, and alignment with job
+     */
+    public String analyzeBioWithNLP(String bio, List<String> jobSkills, Job job) {
+        if (bio == null || bio.trim().isEmpty()) {
+            return "No bio available for analysis.";
+        }
+        
+        // Check if API key is configured
+        if (geminiApiKey == null || geminiApiKey.trim().isEmpty()) {
+            logGeminiApiMissingKeyError("bio NLP");
+            return generateBasicBioAnalysis(bio, jobSkills, job);
+        }
+        
+        HttpHeaders headers = createGeminiHeaders();
+        Map<String, Object> requestBody = new HashMap<>();
+        List<Map<String, Object>> contents = new ArrayList<>();
+        Map<String, Object> content = new HashMap<>();
+        
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("You are an AI bio analyzer specializing in advanced Natural Language Processing and semantic analysis. ");
+        prompt.append("Your task is to deeply analyze the student's professional bio to extract hidden insights, implicit skills, ");
+        prompt.append("personality traits, career aspirations, and cultural fit for the target job position. ");
+        prompt.append("Apply cutting-edge NLP techniques including:\n\n");
+        
+        prompt.append("NLP TECHNIQUES TO APPLY:\n");
+        prompt.append("1. **Semantic Analysis**: Extract meaning beyond keywords through contextual understanding\n");
+        prompt.append("2. **Named Entity Recognition (NER)**: Identify technologies, skills, organizations, and domains\n");
+        prompt.append("3. **Sentiment Analysis**: Gauge passion, enthusiasm, and confidence levels\n");
+        prompt.append("4. **Topic Modeling**: Identify main themes and areas of expertise\n");
+        prompt.append("5. **Skill Extraction**: Detect both explicit and implicit technical and soft skills\n");
+        prompt.append("6. **Intent Recognition**: Understand career goals, motivations, and aspirations\n");
+        prompt.append("7. **Personality Trait Inference**: Deduce personality characteristics from language patterns\n");
+        prompt.append("8. **Contextual Embeddings**: Use semantic similarity to match bio content with job requirements\n\n");
+        
+        prompt.append("STUDENT BIO:\n");
+        prompt.append(bio).append("\n\n");
+        
+        prompt.append("JOB DETAILS:\n");
+        prompt.append("Title: ").append(job.getTitle()).append("\n");
+        prompt.append("Description: ").append(job.getDescription()).append("\n");
+        prompt.append("Required Skills: ").append(String.join(", ", jobSkills)).append("\n\n");
+        
+        prompt.append("COMPREHENSIVE NLP ANALYSIS INSTRUCTIONS:\n\n");
+        
+        prompt.append("1. **Semantic Skill Extraction**:\n");
+        prompt.append("   - Extract ALL technical skills mentioned (explicitly and implicitly)\n");
+        prompt.append("   - Identify soft skills (communication, teamwork, problem-solving, etc.)\n");
+        prompt.append("   - Map extracted skills to job requirements using semantic similarity\n");
+        prompt.append("   - Consider synonyms and related technologies (e.g., 'frontend' → React, Angular, Vue)\n");
+        prompt.append("   - Identify skill proficiency levels from language intensity\n\n");
+        
+        prompt.append("2. **Named Entity Recognition**:\n");
+        prompt.append("   - Programming languages and frameworks mentioned\n");
+        prompt.append("   - Technologies, tools, and platforms\n");
+        prompt.append("   - Project types and domains\n");
+        prompt.append("   - Industry sectors and specializations\n");
+        prompt.append("   - Methodologies (Agile, DevOps, etc.)\n\n");
+        
+        prompt.append("3. **Sentiment and Passion Analysis**:\n");
+        prompt.append("   - Measure enthusiasm level (passionate, motivated, eager, etc.)\n");
+        prompt.append("   - Identify areas of strong interest and excitement\n");
+        prompt.append("   - Detect confidence indicators in skill descriptions\n");
+        prompt.append("   - Assess overall positivity and professional tone\n\n");
+        
+        prompt.append("4. **Career Intent and Goals**:\n");
+        prompt.append("   - Extract career aspirations and long-term goals\n");
+        prompt.append("   - Identify desired role types and responsibilities\n");
+        prompt.append("   - Detect growth mindset and learning orientation\n");
+        prompt.append("   - Match career goals with job position trajectory\n\n");
+        
+        prompt.append("5. **Personality Trait Inference**:\n");
+        prompt.append("   - Collaborative indicators (team player, collaborative, etc.)\n");
+        prompt.append("   - Independent work capability\n");
+        prompt.append("   - Leadership potential\n");
+        prompt.append("   - Attention to detail vs. big-picture thinking\n");
+        prompt.append("   - Innovation and creativity markers\n\n");
+        
+        prompt.append("6. **Cultural and Value Alignment**:\n");
+        prompt.append("   - Work values mentioned (quality, innovation, user-focus, etc.)\n");
+        prompt.append("   - Professional ethics and standards\n");
+        prompt.append("   - Alignment with typical industry/company cultures\n\n");
+        
+        prompt.append("7. **Skill-Job Semantic Matching**:\n");
+        prompt.append("   - For EACH required job skill, determine if the bio provides evidence (direct or indirect)\n");
+        prompt.append("   - Use semantic similarity to find related concepts\n");
+        prompt.append("   - Consider transferable skills and learning potential\n");
+        prompt.append("   - Identify skill gaps that are NOT mentioned in the bio\n\n");
+        
+        prompt.append("OUTPUT FORMAT (provide detailed analysis in these sections):\n\n");
+        prompt.append("### Extracted Skills Analysis\n");
+        prompt.append("- **Technical Skills Identified**: [List all technical skills found with confidence level]\n");
+        prompt.append("- **Soft Skills Identified**: [List all soft skills detected]\n");
+        prompt.append("- **Skill-Job Alignment**: [For each job skill, explain if/how the bio demonstrates it]\n\n");
+        
+        prompt.append("### Semantic Match Assessment\n");
+        prompt.append("- **Direct Matches**: [Skills explicitly mentioned that match job requirements]\n");
+        prompt.append("- **Semantic Matches**: [Related skills/concepts that semantically align with job needs]\n");
+        prompt.append("- **Missing Skills**: [Required skills with NO evidence in bio]\n\n");
+        
+        prompt.append("### Personality and Traits\n");
+        prompt.append("- **Key Personality Traits**: [Inferred traits with supporting evidence]\n");
+        prompt.append("- **Work Style Indicators**: [Collaborative, independent, detail-oriented, etc.]\n");
+        prompt.append("- **Cultural Fit Indicators**: [Values and preferences that indicate cultural alignment]\n\n");
+        
+        prompt.append("### Career Goals and Motivation\n");
+        prompt.append("- **Career Aspirations**: [Goals and desired career path]\n");
+        prompt.append("- **Passion Areas**: [Topics showing high enthusiasm]\n");
+        prompt.append("- **Alignment with Job**: [How career goals align with this position]\n");
+        prompt.append("- **Growth Mindset Indicators**: [Evidence of learning orientation]\n\n");
+        
+        prompt.append("### Sentiment and Confidence\n");
+        prompt.append("- **Overall Sentiment**: [Positive/neutral/concerning]\n");
+        prompt.append("- **Confidence Level**: [High/moderate/low with evidence]\n");
+        prompt.append("- **Passion Intensity**: [Score 1-10 with explanation]\n\n");
+        
+        prompt.append("### Bio Relevance Score\n");
+        prompt.append("- **Overall Bio-Job Match**: [Percentage 1-100% with detailed explanation]\n");
+        prompt.append("- **Reasoning**: [Explain the score based on skill coverage, alignment, and potential]\n");
+        prompt.append("- **Recommendations**: [How student could improve bio for better match]\n\n");
+        
+        prompt.append("IMPORTANT CONSIDERATIONS:\n");
+        prompt.append("- Weight demonstrated passion and motivation highly\n");
+        prompt.append("- Consider implicit skills (e.g., 'built web apps' → HTML, CSS, JavaScript)\n");
+        prompt.append("- Value learning orientation and growth potential\n");
+        prompt.append("- Recognize transferable skills from different domains\n");
+        prompt.append("- Assess cultural fit through language and values expressed\n");
+        prompt.append("- Provide specific evidence from the bio for each insight\n");
+        
+        List<Map<String, Object>> parts = new ArrayList<>();
+        Map<String, Object> textPart = new HashMap<>();
+        textPart.put("text", prompt.toString());
+        parts.add(textPart);
+        
+        content.put("parts", parts);
+        contents.add(content);
+        requestBody.put("contents", contents);
+        
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        
+        try {
+            Map<String, Object> response = restTemplate.postForObject(GEMINI_API_URL, entity, Map.class);
+            String analysis = extractGeminiResponse(response);
+            
+            if (analysis != null) {
+                return analysis;
+            }
+            logGeminiApiResponseError("bio NLP", response);
+        } catch (Exception e) {
+            logGeminiApiError("bio NLP", e);
+        }
+        
+        // Fallback to basic analysis if API call fails
+        return generateBasicBioAnalysis(bio, jobSkills, job);
+    }
+    
+    /**
+     * Generate basic bio analysis without AI
+     */
+    private String generateBasicBioAnalysis(String bio, List<String> jobSkills, Job job) {
+        StringBuilder analysis = new StringBuilder();
+        analysis.append("## Bio Analysis\n\n");
+        
+        analysis.append("### Student Bio\n");
+        analysis.append(bio).append("\n\n");
+        
+        String bioLower = bio.toLowerCase();
+        
+        // Extract potential skills from bio
+        List<String> foundSkills = new ArrayList<>();
+        List<String> missingSkills = new ArrayList<>();
+        
+        for (String jobSkill : jobSkills) {
+            String skillLower = jobSkill.toLowerCase();
+            if (bioLower.contains(skillLower)) {
+                foundSkills.add(jobSkill);
+            } else {
+                // Check for partial matches
+                boolean partialMatch = false;
+                String[] skillWords = skillLower.split("\\s+");
+                for (String word : skillWords) {
+                    if (word.length() > 3 && bioLower.contains(word)) {
+                        foundSkills.add(jobSkill + " (partial)");
+                        partialMatch = true;
+                        break;
+                    }
+                }
+                if (!partialMatch) {
+                    missingSkills.add(jobSkill);
+                }
+            }
+        }
+        
+        // Analyze found skills
+        analysis.append("### Skill Mentions in Bio\n\n");
+        if (!foundSkills.isEmpty()) {
+            analysis.append("The following job skills are mentioned in the bio:\n");
+            for (String skill : foundSkills) {
+                analysis.append("- ").append(skill).append("\n");
+            }
+            analysis.append("\n");
+        } else {
+            analysis.append("No direct job skill mentions found in the bio.\n\n");
+        }
+        
+        // Analyze missing skills
+        if (!missingSkills.isEmpty()) {
+            analysis.append("### Skills Not Mentioned\n\n");
+            analysis.append("The following job skills are not explicitly mentioned in the bio:\n");
+            for (String skill : missingSkills) {
+                analysis.append("- ").append(skill).append("\n");
+            }
+            analysis.append("\n");
+        }
+        
+        // Detect passion indicators
+        analysis.append("### Passion and Motivation Indicators\n\n");
+        List<String> passionWords = Arrays.asList("passionate", "love", "enjoy", "excited", "enthusiastic", 
+            "dedicated", "committed", "motivated", "eager", "interested", "fascinated");
+        List<String> foundPassionWords = new ArrayList<>();
+        
+        for (String word : passionWords) {
+            if (bioLower.contains(word)) {
+                foundPassionWords.add(word);
+            }
+        }
+        
+        if (!foundPassionWords.isEmpty()) {
+            analysis.append("Passion indicators found: ").append(String.join(", ", foundPassionWords)).append("\n");
+            analysis.append("This suggests strong motivation and enthusiasm for the field.\n\n");
+        } else {
+            analysis.append("No explicit passion indicators found. Consider adding words that convey enthusiasm.\n\n");
+        }
+        
+        // Calculate match percentage
+        int matchPercentage = 0;
+        if (!jobSkills.isEmpty()) {
+            matchPercentage = Math.round((float) foundSkills.size() / jobSkills.size() * 100);
+        }
+        
+        analysis.append("### Bio Relevance Score\n\n");
+        analysis.append("The bio demonstrates approximately ").append(matchPercentage)
+            .append("% of the required job skills through direct mentions.\n\n");
+        
+        if (matchPercentage < 30) {
+            analysis.append("**Recommendation**: Consider updating your bio to include more specific technical skills and project experiences that align with job requirements.\n");
+        } else if (matchPercentage < 60) {
+            analysis.append("**Recommendation**: Your bio shows some relevant skills. Consider adding more details about projects and experiences that demonstrate the missing skills.\n");
+        } else {
+            analysis.append("**Good**: Your bio effectively communicates relevant skills and experience for this position.\n");
+        }
+        
+        analysis.append("\n*Note: This is a basic keyword-based analysis. For deeper NLP analysis, please ensure the Gemini API is properly configured.*");
+        
+        return analysis.toString();
+    }
 
     public JobMatch getJobMatch(UUID jobMatchId) {
         return jobMatchRepository.findById(jobMatchId).orElse(null);
@@ -2491,37 +2690,161 @@ public class JobMatchService {
         System.err.println("Please add gemini.api.key to your application.properties");
         System.err.println("Falling back to basic analysis method");
     }
+    
+    /**
+     * Create HttpHeaders for Gemini API requests
+     */
+    private HttpHeaders createGeminiHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("x-goog-api-key", geminiApiKey);
+        return headers;
+    }
+    
+    /**
+     * Extract text response from Gemini API response
+     */
+    private String extractGeminiResponse(Map<String, Object> response) {
+        if (response != null && response.containsKey("candidates")) {
+            List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+            if (!candidates.isEmpty()) {
+                Map<String, Object> candidate = candidates.get(0);
+                List<Map<String, Object>> contentList = (List<Map<String, Object>>) candidate.get("content");
+                if (!contentList.isEmpty()) {
+                    Map<String, Object> contentItem = contentList.get(0);
+                    List<Map<String, Object>> responseParts = (List<Map<String, Object>>) contentItem.get("parts");
+                    if (!responseParts.isEmpty()) {
+                        return (String) responseParts.get(0).get("text");
+                    }
+                }
+            }
+        }
+        return null;
+    }
 
     /**
-     * Returns a map of framework-language relationships for better skill matching.
-     * The key is the framework/library name, and the value is a list of related languages.
+     * Returns a comprehensive map of framework-language relationships for better skill matching.
+     * The key is the framework/library name, and the value is a list of related languages and technologies.
      */
     private Map<String, List<String>> getFrameworkLanguageMap() {
         Map<String, List<String>> frameworkLanguageMap = new HashMap<>();
-        frameworkLanguageMap.put("react", Arrays.asList("javascript", "typescript", "js", "jsx", "tsx"));
-        frameworkLanguageMap.put("angular", Arrays.asList("javascript", "typescript", "js", "ts"));
-        frameworkLanguageMap.put("vue", Arrays.asList("javascript", "typescript", "js"));
-        frameworkLanguageMap.put("spring", Arrays.asList("java", "kotlin"));
-        frameworkLanguageMap.put("django", Arrays.asList("python"));
-        frameworkLanguageMap.put("flask", Arrays.asList("python"));
-        frameworkLanguageMap.put("express", Arrays.asList("javascript", "typescript", "node", "nodejs", "node.js"));
-        frameworkLanguageMap.put("laravel", Arrays.asList("php"));
-        frameworkLanguageMap.put("rails", Arrays.asList("ruby"));
-        frameworkLanguageMap.put("asp.net", Arrays.asList("c#", "csharp", ".net", "dotnet"));
-        frameworkLanguageMap.put("hibernate", Arrays.asList("java", "kotlin"));
-        frameworkLanguageMap.put("junit", Arrays.asList("java", "kotlin"));
-        frameworkLanguageMap.put("pytest", Arrays.asList("python"));
-        frameworkLanguageMap.put("tensorflow", Arrays.asList("python", "java", "javascript"));
-        frameworkLanguageMap.put("pytorch", Arrays.asList("python"));
-        frameworkLanguageMap.put("nextjs", Arrays.asList("javascript", "typescript", "react", "js", "jsx", "tsx"));
+        
+        // Frontend frameworks
+        frameworkLanguageMap.put("react", Arrays.asList("javascript", "typescript", "js", "jsx", "tsx", "frontend", "ui"));
+        frameworkLanguageMap.put("react.js", Arrays.asList("javascript", "typescript", "js", "jsx", "tsx", "react"));
+        frameworkLanguageMap.put("angular", Arrays.asList("javascript", "typescript", "js", "ts", "frontend", "ui"));
+        frameworkLanguageMap.put("vue", Arrays.asList("javascript", "typescript", "js", "frontend", "ui"));
+        frameworkLanguageMap.put("vue.js", Arrays.asList("javascript", "typescript", "js", "vue"));
+        frameworkLanguageMap.put("svelte", Arrays.asList("javascript", "typescript", "js", "frontend"));
+        frameworkLanguageMap.put("nextjs", Arrays.asList("javascript", "typescript", "react", "js", "jsx", "tsx", "ssr"));
+        frameworkLanguageMap.put("next.js", Arrays.asList("javascript", "typescript", "react", "nextjs"));
         frameworkLanguageMap.put("gatsby", Arrays.asList("javascript", "typescript", "react", "js", "jsx", "tsx"));
-        frameworkLanguageMap.put("nestjs", Arrays.asList("javascript", "typescript", "node", "nodejs", "node.js"));
+        frameworkLanguageMap.put("nuxt", Arrays.asList("javascript", "typescript", "vue", "ssr"));
+        frameworkLanguageMap.put("ember", Arrays.asList("javascript", "typescript", "frontend"));
+        
+        // Backend frameworks - Java/Kotlin
+        frameworkLanguageMap.put("spring", Arrays.asList("java", "kotlin", "backend", "api"));
+        frameworkLanguageMap.put("spring boot", Arrays.asList("java", "kotlin", "spring", "backend", "api"));
+        frameworkLanguageMap.put("springboot", Arrays.asList("java", "kotlin", "spring", "backend"));
+        frameworkLanguageMap.put("spring mvc", Arrays.asList("java", "kotlin", "spring", "web"));
+        frameworkLanguageMap.put("hibernate", Arrays.asList("java", "kotlin", "orm", "database"));
+        frameworkLanguageMap.put("jpa", Arrays.asList("java", "kotlin", "orm", "database", "hibernate"));
+        frameworkLanguageMap.put("junit", Arrays.asList("java", "kotlin", "testing"));
+        frameworkLanguageMap.put("mockito", Arrays.asList("java", "kotlin", "testing"));
+        frameworkLanguageMap.put("maven", Arrays.asList("java", "build", "dependency"));
+        frameworkLanguageMap.put("gradle", Arrays.asList("java", "kotlin", "build", "dependency"));
+        
+        // Backend frameworks - JavaScript/TypeScript
+        frameworkLanguageMap.put("express", Arrays.asList("javascript", "typescript", "node", "nodejs", "node.js", "backend", "api"));
+        frameworkLanguageMap.put("express.js", Arrays.asList("javascript", "typescript", "node", "express", "backend"));
+        frameworkLanguageMap.put("nestjs", Arrays.asList("javascript", "typescript", "node", "nodejs", "node.js", "backend"));
+        frameworkLanguageMap.put("nest.js", Arrays.asList("typescript", "node", "nestjs", "backend"));
+        frameworkLanguageMap.put("koa", Arrays.asList("javascript", "typescript", "node", "backend"));
+        frameworkLanguageMap.put("fastify", Arrays.asList("javascript", "typescript", "node", "backend"));
+        frameworkLanguageMap.put("hapi", Arrays.asList("javascript", "node", "backend"));
+        
+        // Backend frameworks - Python
+        frameworkLanguageMap.put("django", Arrays.asList("python", "backend", "web", "orm"));
+        frameworkLanguageMap.put("flask", Arrays.asList("python", "backend", "web", "api"));
+        frameworkLanguageMap.put("fastapi", Arrays.asList("python", "backend", "api", "async"));
+        frameworkLanguageMap.put("pyramid", Arrays.asList("python", "backend", "web"));
+        frameworkLanguageMap.put("tornado", Arrays.asList("python", "backend", "async"));
+        frameworkLanguageMap.put("pytest", Arrays.asList("python", "testing"));
+        frameworkLanguageMap.put("sqlalchemy", Arrays.asList("python", "orm", "database"));
+        
+        // Backend frameworks - PHP
+        frameworkLanguageMap.put("laravel", Arrays.asList("php", "backend", "web", "mvc"));
+        frameworkLanguageMap.put("symfony", Arrays.asList("php", "backend", "web"));
+        frameworkLanguageMap.put("codeigniter", Arrays.asList("php", "backend", "web"));
+        frameworkLanguageMap.put("yii", Arrays.asList("php", "backend", "web"));
+        
+        // Backend frameworks - Ruby
+        frameworkLanguageMap.put("rails", Arrays.asList("ruby", "backend", "web", "mvc"));
+        frameworkLanguageMap.put("ruby on rails", Arrays.asList("ruby", "rails", "backend"));
+        frameworkLanguageMap.put("sinatra", Arrays.asList("ruby", "backend", "web"));
+        
+        // .NET frameworks
+        frameworkLanguageMap.put("asp.net", Arrays.asList("c#", "csharp", ".net", "dotnet", "backend", "web"));
+        frameworkLanguageMap.put("asp.net core", Arrays.asList("c#", "csharp", ".net", "dotnet", "backend"));
         frameworkLanguageMap.put("dotnet", Arrays.asList("c#", "csharp", ".net", "f#", "vb.net"));
-        frameworkLanguageMap.put("xamarin", Arrays.asList("c#", "csharp", ".net", "dotnet"));
-        frameworkLanguageMap.put("flutter", Arrays.asList("dart"));
-        frameworkLanguageMap.put("android", Arrays.asList("java", "kotlin"));
-        frameworkLanguageMap.put("ios", Arrays.asList("swift", "objective-c"));
-        frameworkLanguageMap.put("react native", Arrays.asList("javascript", "typescript", "react", "js", "jsx", "tsx"));
+        frameworkLanguageMap.put(".net", Arrays.asList("c#", "csharp", "dotnet", "backend"));
+        frameworkLanguageMap.put("xamarin", Arrays.asList("c#", "csharp", ".net", "dotnet", "mobile"));
+        frameworkLanguageMap.put("blazor", Arrays.asList("c#", "csharp", ".net", "frontend"));
+        frameworkLanguageMap.put("entity framework", Arrays.asList("c#", "csharp", ".net", "orm", "database"));
+        
+        // Mobile frameworks
+        frameworkLanguageMap.put("react native", Arrays.asList("javascript", "typescript", "react", "js", "jsx", "tsx", "mobile"));
+        frameworkLanguageMap.put("flutter", Arrays.asList("dart", "mobile", "cross-platform"));
+        frameworkLanguageMap.put("android", Arrays.asList("java", "kotlin", "mobile"));
+        frameworkLanguageMap.put("ios", Arrays.asList("swift", "objective-c", "mobile"));
+        frameworkLanguageMap.put("ionic", Arrays.asList("javascript", "typescript", "angular", "mobile"));
+        frameworkLanguageMap.put("cordova", Arrays.asList("javascript", "html", "css", "mobile"));
+        frameworkLanguageMap.put("phonegap", Arrays.asList("javascript", "html", "mobile"));
+        
+        // Data & ML frameworks
+        frameworkLanguageMap.put("tensorflow", Arrays.asList("python", "java", "javascript", "ml", "ai"));
+        frameworkLanguageMap.put("pytorch", Arrays.asList("python", "ml", "ai", "deep learning"));
+        frameworkLanguageMap.put("keras", Arrays.asList("python", "tensorflow", "ml", "ai"));
+        frameworkLanguageMap.put("scikit-learn", Arrays.asList("python", "ml", "data science"));
+        frameworkLanguageMap.put("pandas", Arrays.asList("python", "data analysis", "data science"));
+        frameworkLanguageMap.put("numpy", Arrays.asList("python", "data science", "numerical"));
+        
+        // Database and ORM
+        frameworkLanguageMap.put("mongodb", Arrays.asList("nosql", "database", "json"));
+        frameworkLanguageMap.put("mysql", Arrays.asList("sql", "database", "relational"));
+        frameworkLanguageMap.put("postgresql", Arrays.asList("sql", "database", "relational"));
+        frameworkLanguageMap.put("redis", Arrays.asList("nosql", "cache", "database"));
+        frameworkLanguageMap.put("cassandra", Arrays.asList("nosql", "database", "distributed"));
+        frameworkLanguageMap.put("elasticsearch", Arrays.asList("search", "nosql", "database"));
+        
+        // Cloud and DevOps
+        frameworkLanguageMap.put("aws", Arrays.asList("cloud", "devops", "infrastructure"));
+        frameworkLanguageMap.put("azure", Arrays.asList("cloud", "devops", "infrastructure", "microsoft"));
+        frameworkLanguageMap.put("gcp", Arrays.asList("cloud", "devops", "infrastructure", "google"));
+        frameworkLanguageMap.put("docker", Arrays.asList("containerization", "devops", "deployment"));
+        frameworkLanguageMap.put("kubernetes", Arrays.asList("container orchestration", "devops", "docker", "k8s"));
+        frameworkLanguageMap.put("jenkins", Arrays.asList("ci/cd", "devops", "automation"));
+        frameworkLanguageMap.put("terraform", Arrays.asList("infrastructure as code", "devops", "cloud"));
+        
+        // Testing frameworks
+        frameworkLanguageMap.put("jest", Arrays.asList("javascript", "typescript", "testing", "react"));
+        frameworkLanguageMap.put("mocha", Arrays.asList("javascript", "typescript", "testing"));
+        frameworkLanguageMap.put("chai", Arrays.asList("javascript", "typescript", "testing"));
+        frameworkLanguageMap.put("cypress", Arrays.asList("javascript", "typescript", "testing", "e2e"));
+        frameworkLanguageMap.put("selenium", Arrays.asList("testing", "automation", "e2e"));
+        
+        // State management
+        frameworkLanguageMap.put("redux", Arrays.asList("javascript", "typescript", "react", "state management"));
+        frameworkLanguageMap.put("mobx", Arrays.asList("javascript", "typescript", "react", "state management"));
+        frameworkLanguageMap.put("vuex", Arrays.asList("javascript", "vue", "state management"));
+        frameworkLanguageMap.put("ngrx", Arrays.asList("typescript", "angular", "state management"));
+        
+        // Build tools and bundlers
+        frameworkLanguageMap.put("webpack", Arrays.asList("javascript", "build", "bundler"));
+        frameworkLanguageMap.put("vite", Arrays.asList("javascript", "typescript", "build", "bundler"));
+        frameworkLanguageMap.put("parcel", Arrays.asList("javascript", "build", "bundler"));
+        frameworkLanguageMap.put("rollup", Arrays.asList("javascript", "build", "bundler"));
+        
         return frameworkLanguageMap;
     }
 
@@ -2531,7 +2854,7 @@ public class JobMatchService {
      */
     private Double calculateMatchScoreWithAllData(StudentProfile student, List<String> studentSkills, CV cv, Job job,
                                                 String githubAnalysis, String portfolioAnalysis, 
-                                                String certificationsAnalysis, String experiencesAnalysis) {
+                                                String certificationsAnalysis, String experiencesAnalysis, String bioAnalysis) {
         // Check if API key is configured
         if (geminiApiKey == null || geminiApiKey.trim().isEmpty()) {
             logGeminiApiMissingKeyError("comprehensive match score calculation");
@@ -2540,11 +2863,7 @@ public class JobMatchService {
         }
         
         // Use AI for a comprehensive analysis that takes into account all data sources
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-goog-api-key", geminiApiKey);
-        
+        HttpHeaders headers = createGeminiHeaders();
         Map<String, Object> requestBody = new HashMap<>();
         List<Map<String, Object>> contents = new ArrayList<>();
         Map<String, Object> content = new HashMap<>();
@@ -2610,6 +2929,11 @@ public class JobMatchService {
             prompt.append("Work Experience Analysis:\n").append(experiencesAnalysis).append("\n\n");
         }
         
+        // Add bio analysis if available
+        if (bioAnalysis != null && !bioAnalysis.isEmpty()) {
+            prompt.append("Bio NLP Analysis:\n").append(bioAnalysis).append("\n\n");
+        }
+        
         // Add specific instructions for comprehensive analysis
         prompt.append("COMPREHENSIVE ANALYSIS INSTRUCTIONS:\n");
         prompt.append("1. Consider ALL available data sources in your evaluation\n");
@@ -2620,7 +2944,8 @@ public class JobMatchService {
         prompt.append("   - Portfolio projects that showcase relevant abilities\n");
         prompt.append("   - Certifications that validate specific competencies\n");
         prompt.append("   - Work experience that demonstrates practical application\n");
-        prompt.append("   - Educational background relevance to the position\n\n");
+        prompt.append("   - Educational background relevance to the position\n");
+        prompt.append("   - Bio analysis showing personality traits, passion, and career goals alignment\n\n");
         
         prompt.append("3. Apply these special matching rules:\n");
         prompt.append("   - If the student has Java, Spring Boot, and React skills, and the job requires these, give at least a 60% match\n");
@@ -2642,38 +2967,19 @@ public class JobMatchService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         
         try {
-            System.out.println("Sending request to Gemini API for comprehensive match score calculation...");
-            Map<String, Object> response = restTemplate.postForObject(
-                GEMINI_API_URL, entity, Map.class);
+            Map<String, Object> response = restTemplate.postForObject(GEMINI_API_URL, entity, Map.class);
+            String scoreText = extractGeminiResponse(response);
             
-            if (response != null && response.containsKey("candidates")) {
-                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-                if (!candidates.isEmpty()) {
-                    Map<String, Object> candidate = candidates.get(0);
-                    List<Map<String, Object>> contentList = (List<Map<String, Object>>) candidate.get("content");
-                    if (!contentList.isEmpty()) {
-                        Map<String, Object> contentItem = contentList.get(0);
-                        List<Map<String, Object>> responseParts = (List<Map<String, Object>>) contentItem.get("parts");
-                        if (!responseParts.isEmpty()) {
-                            String scoreText = (String) responseParts.get(0).get("text");
-                            System.out.println("Received comprehensive match score from AI: " + scoreText);
-                            try {
-                                // Parse as double to handle any decimal responses, then ensure it's in range 1-100
-                                double score = Double.parseDouble(scoreText.trim());
-                                // Ensure the score is within the 1-100 range
-                                return Math.min(100.0, Math.max(1.0, score));
-                            } catch (NumberFormatException e) {
-                                System.err.println("Error parsing score from AI: " + e.getMessage());
-                                // Fall back to basic match calculation
-                                return calculateMatchScore(student, studentSkills, cv, job);
-                            }
-                        }
-                    }
+            if (scoreText != null) {
+                try {
+                    double score = Double.parseDouble(scoreText.trim());
+                    return Math.min(100.0, Math.max(1.0, score));
+                } catch (NumberFormatException e) {
+                    System.err.println("Error parsing score from AI: " + e.getMessage());
+                    return calculateMatchScore(student, studentSkills, cv, job);
                 }
-                logGeminiApiResponseError("comprehensive match score calculation", response);
-            } else {
-                logGeminiApiResponseError("comprehensive match score calculation", response);
             }
+            logGeminiApiResponseError("comprehensive match score", response);
         } catch (Exception e) {
             logGeminiApiError("comprehensive match score calculation", e);
         }

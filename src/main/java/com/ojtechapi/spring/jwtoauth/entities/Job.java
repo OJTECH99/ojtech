@@ -18,9 +18,9 @@ public class Job extends BaseEntity {
     @JsonBackReference
     private NLOProfile employer;
     
-    @OneToOne
-    @JoinColumn(name = "company_id", unique = true)
-    @JsonIgnoreProperties({"job"})
+    @ManyToOne
+    @JoinColumn(name = "company_id")
+    @JsonIgnoreProperties({"jobs"})
     private Company company;
     
     @Column(name = "title", nullable = false)

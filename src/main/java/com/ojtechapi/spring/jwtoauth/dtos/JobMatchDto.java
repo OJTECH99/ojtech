@@ -12,6 +12,7 @@ public class JobMatchDto {
     private LocalDateTime matchedAt;
     private String matchDetails;
     private boolean viewed;
+    private boolean alreadyApplied; // New field to track if email was sent
     
     public JobMatchDto() {
     }
@@ -23,6 +24,7 @@ public class JobMatchDto {
         this.matchedAt = jobMatch.getMatchedAt();
         this.matchDetails = jobMatch.getMatchDetails();
         this.viewed = jobMatch.isViewed();
+        this.alreadyApplied = false; // Default value, will be set by controller
     }
     
     public UUID getId() {
@@ -72,4 +74,12 @@ public class JobMatchDto {
     public void setViewed(boolean viewed) {
         this.viewed = viewed;
     }
-} 
+    
+    public boolean isAlreadyApplied() {
+        return alreadyApplied;
+    }
+    
+    public void setAlreadyApplied(boolean alreadyApplied) {
+        this.alreadyApplied = alreadyApplied;
+    }
+}

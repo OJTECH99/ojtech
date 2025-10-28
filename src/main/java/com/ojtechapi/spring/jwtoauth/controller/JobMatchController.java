@@ -41,6 +41,9 @@ public class JobMatchController {
     
     @Autowired
     private JobRepository jobRepository;
+    
+    @Autowired
+    private com.ojtechapi.spring.jwtoauth.repositories.JobApplicationRepository jobApplicationRepository;
 
     @GetMapping("/findjobs")
     public ResponseEntity<?> findJobMatches(
@@ -132,13 +135,18 @@ public class JobMatchController {
             
             // Note: Verification check removed - frontend handles warnings for unverified students
             // Students can browse jobs but see warnings about uploading documents and verification status
-            // if(!studentProfile.isVerified()){
-            //     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            //         .body(Collections.singletonMap("error", "Student profile not verified"));
-            // }
             List<JobMatch> matches = jobMatchService.getStudentMatches(studentProfile.getId());
             List<JobMatchDto> matchDtos = matches.stream()
-                    .map(JobMatchDto::new)
+                    .map(match -> {
+                        JobMatchDto dto = new JobMatchDto(match);
+                        // Check if student has already applied to this job with email sent
+                        boolean alreadyApplied = jobApplicationRepository
+                            .findByStudentAndJob(studentProfile, match.getJob())
+                            .map(app -> app.getEmailSent() != null && app.getEmailSent())
+                            .orElse(false);
+                        dto.setAlreadyApplied(alreadyApplied);
+                        return dto;
+                    })
                     .collect(Collectors.toList());
             
             return ResponseEntity.ok(matchDtos);
@@ -689,4 +697,4 @@ public class JobMatchController {
                 .body(Collections.singletonMap("error", e.getMessage()));
         }
     }
-} 
+}

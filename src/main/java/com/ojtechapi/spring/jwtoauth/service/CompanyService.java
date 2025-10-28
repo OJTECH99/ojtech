@@ -127,9 +127,9 @@ public class CompanyService {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Company not found"));
         
-        // Check if company has an associated job
-        if (company.getJob() != null) {
-            throw new RuntimeException("Cannot delete company with active job posting");
+        // Check if company has any associated jobs
+        if (company.getJobs() != null && !company.getJobs().isEmpty()) {
+            throw new RuntimeException("Cannot delete company with active job postings");
         }
         
         companyRepository.delete(company);

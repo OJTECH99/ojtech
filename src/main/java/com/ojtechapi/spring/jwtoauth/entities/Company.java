@@ -4,10 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Company entity - Represents partner companies managed by NLO Staff
- * One-to-one relationship with Job entity
+ * One-to-many relationship with Job entity (one company can have multiple jobs)
  */
 @Entity
 @Table(name = "companies")
@@ -63,9 +65,9 @@ public class Company extends BaseEntity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    @OneToOne(mappedBy = "company", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     @JsonIgnoreProperties({"company", "employer"})
-    private Job job;
+    private List<Job> jobs = new ArrayList<>();
     
     public Company() {
         this.createdAt = LocalDateTime.now();
@@ -202,12 +204,12 @@ public class Company extends BaseEntity {
         this.updatedAt = updatedAt;
     }
     
-    public Job getJob() {
-        return job;
+    public List<Job> getJobs() {
+        return jobs;
     }
     
-    public void setJob(Job job) {
-        this.job = job;
+    public void setJobs(List<Job> jobs) {
+        this.jobs = jobs;
     }
     
     @PreUpdate

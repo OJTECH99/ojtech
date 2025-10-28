@@ -30,10 +30,10 @@ import com.ojtechapi.spring.jwtoauth.dtos.responses.JobApplicationResponseDTO;
 import com.ojtechapi.spring.jwtoauth.dtos.responses.MessageResponse;
 import com.ojtechapi.spring.jwtoauth.entities.ApplicationStatus;
 import com.ojtechapi.spring.jwtoauth.entities.CV;
-import com.ojtechapi.spring.jwtoauth.entities.NLOProfile;
 import com.ojtechapi.spring.jwtoauth.entities.Job;
 import com.ojtechapi.spring.jwtoauth.entities.JobApplication;
 import com.ojtechapi.spring.jwtoauth.entities.JobMatch;
+import com.ojtechapi.spring.jwtoauth.entities.NLOProfile;
 import com.ojtechapi.spring.jwtoauth.entities.StudentEmailTracking;
 import com.ojtechapi.spring.jwtoauth.entities.StudentProfile;
 import com.ojtechapi.spring.jwtoauth.exceptions.BadRequestException;
@@ -124,10 +124,18 @@ public class JobApplicationController {
 
         Job job = jobOpt.get();
 
-        // Check if already applied
+        // Check if already applied WITH EMAIL SENT (alreadyApplied = true)
+        // Allow creating new application if previous one has emailSent = false
         Optional<JobApplication> existingApplication = jobApplicationRepository.findByStudentAndJob(studentProfile, job);
         if (existingApplication.isPresent()) {
-            throw new BadRequestException("You have already applied for this job");
+            JobApplication existing = existingApplication.get();
+            // Only block if email was already sent
+            if (existing.getEmailSent() != null && existing.getEmailSent()) {
+                throw new BadRequestException("You have already applied for this job");
+            }
+            // If email was NOT sent, delete the old pending application and create a new one
+            jobApplicationRepository.delete(existing);
+            System.out.println("Deleted pending application (email not sent) for job: " + job.getId());
         }
 
         // Initialize application data if null
@@ -155,15 +163,13 @@ public class JobApplicationController {
         // Always generate a cover letter automatically
         String coverLetter = coverLetterService.generateCoverLetter(studentProfile.getId(), jobId, cvId);
 
-        // Create application with PENDING status (will be updated to APPLIED after email is sent)
+        // Create application with PENDING status (appliedAt and lastUpdatedAt will be set after email is sent)
         JobApplication application = new JobApplication();
         application.setStudent(studentProfile);
         application.setJob(job);
         application.setCv(cv);
         application.setCoverLetter(coverLetter);
-        application.setStatus(ApplicationStatus.PENDING);
-        application.setAppliedAt(LocalDateTime.now());
-        application.setLastUpdatedAt(LocalDateTime.now());
+        // Do not set appliedAt and lastUpdatedAt yet - they will be set when email is successfully sent
 
         application = jobApplicationRepository.save(application);
         
@@ -408,7 +414,7 @@ public class JobApplicationController {
         }
         
         try {
-            // Send email
+            // Send email - this must succeed before we update the application status
             emailService.sendJobApplicationEmail(
                 recipientEmail,
                 recipientName,
@@ -425,12 +431,15 @@ public class JobApplicationController {
                 attachments
             );
             
-            // Update application with email details and change status to APPLIED
+            // Email sent successfully - now update application status to APPLIED
+            LocalDateTime now = LocalDateTime.now();
             application.setEmailSent(true);
-            application.setEmailSentAt(LocalDateTime.now());
+            application.setEmailSentAt(now);
             application.setEmailBody(emailBody);
             application.setEmailSubject(subject);
-            application.setStatus(ApplicationStatus.APPLIED);
+            application.setStatus(ApplicationStatus.APPLIED); // Status only changes after successful email
+            application.setAppliedAt(now); // Set appliedAt when email is successfully sent
+            application.setLastUpdatedAt(now); // Set lastUpdatedAt when email is successfully sent
             jobApplicationRepository.save(application);
             
             // Increment email count
@@ -444,6 +453,7 @@ public class JobApplicationController {
                 "emailsRemaining", 10 - tracking.getEmailCount()
             ));
         } catch (Exception e) {
+            // Email failed - application remains in PENDING status
             throw new BadRequestException("Failed to send email: " + e.getMessage());
         }
     }
@@ -456,4 +466,150 @@ public class JobApplicationController {
             jobTitle, coverLetter != null ? coverLetter : "Please find my application materials attached.", studentName
         );
     }
-} 
+    
+    @PostMapping(value = "/apply-and-send/{jobId}", consumes = "multipart/form-data")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<?> applyAndSendEmail(
+            @PathVariable UUID jobId,
+            @RequestParam("subject") String subject,
+            @RequestParam("emailBody") String emailBody,
+            @RequestParam(value = "attachments", required = false) MultipartFile[] attachments) {
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        UUID userId = userDetails.getId();
+
+        Optional<StudentProfile> studentProfileOpt = studentProfileRepository.findByUserId(userId);
+        if (studentProfileOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Student profile not found");
+        }
+
+        StudentProfile studentProfile = studentProfileOpt.get();
+
+        Optional<Job> jobOpt = jobRepository.findById(jobId);
+        if (jobOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Job not found");
+        }
+
+        Job job = jobOpt.get();
+
+        // Check if already applied WITH EMAIL SENT
+        Optional<JobApplication> existingApplication = jobApplicationRepository.findByStudentAndJob(studentProfile, job);
+        if (existingApplication.isPresent()) {
+            JobApplication existing = existingApplication.get();
+            if (existing.getEmailSent() != null && existing.getEmailSent()) {
+                throw new BadRequestException("You have already applied for this job");
+            }
+            // Delete old pending application
+            jobApplicationRepository.delete(existing);
+            System.out.println("Deleted pending application (email not sent) for job: " + job.getId());
+        }
+
+        // Get CV
+        UUID cvId = studentProfile.getActiveCvId();
+        if (cvId == null) {
+            throw new BadRequestException("No active CV found. Please set an active CV in your profile.");
+        }
+
+        Optional<CV> cvOpt = cvRepository.findById(cvId);
+        if (cvOpt.isEmpty()) {
+            throw new ResourceNotFoundException("CV not found");
+        }
+
+        CV cv = cvOpt.get();
+        
+        // Generate cover letter
+        String coverLetter = coverLetterService.generateCoverLetter(studentProfile.getId(), jobId, cvId);
+
+        // Check rate limiting
+        LocalDate today = LocalDate.now();
+        Optional<StudentEmailTracking> trackingOpt = emailTrackingRepository.findByStudentIdAndEmailDate(studentProfile.getId(), today);
+        
+        StudentEmailTracking tracking;
+        if (trackingOpt.isPresent()) {
+            tracking = trackingOpt.get();
+            if (tracking.getEmailCount() >= 10) {
+                throw new BadRequestException("Daily email limit reached (10 emails per day). Please try again tomorrow.");
+            }
+        } else {
+            tracking = new StudentEmailTracking(studentProfile.getId(), today);
+        }
+
+        NLOProfile employer = job.getEmployer();
+        String studentName = studentProfile.getFirstName() + " " + studentProfile.getLastName();
+        String cvUrl = baseUrl + "/api/cvs/" + cv.getId() + "/view";
+        String studentEmail = studentProfile.getUser() != null ? studentProfile.getUser().getEmail() : studentProfile.getEmail();
+        String studentPhone = studentProfile.getPhoneNumber() != null ? studentProfile.getPhoneNumber() : studentProfile.getPhone();
+        
+        // Determine recipient
+        String recipientEmail;
+        String recipientName;
+        String companyName;
+        
+        if (job.getCompany() != null && job.getCompany().getHrEmail() != null) {
+            recipientEmail = job.getCompany().getHrEmail();
+            recipientName = job.getCompany().getHrName() != null ? job.getCompany().getHrName() : "Hiring Manager";
+            companyName = job.getCompany().getName();
+        } else {
+            recipientEmail = employer.getContactPersonEmail();
+            recipientName = employer.getContactPersonName();
+            companyName = employer.getCompanyName();
+        }
+        
+        try {
+            // Send email FIRST - if this fails, no application is created
+            emailService.sendJobApplicationEmail(
+                recipientEmail,
+                recipientName,
+                studentName,
+                studentEmail,
+                studentPhone,
+                studentProfile.getUniversity(),
+                studentProfile.getMajor(),
+                job.getTitle(),
+                companyName,
+                coverLetter,
+                cvUrl,
+                emailBody,
+                attachments
+            );
+            
+            // Email sent successfully - NOW create the application with emailSent=true
+            LocalDateTime now = LocalDateTime.now();
+            JobApplication application = new JobApplication();
+            application.setStudent(studentProfile);
+            application.setJob(job);
+            application.setCv(cv);
+            application.setCoverLetter(coverLetter);
+            application.setEmailSent(true);
+            application.setEmailSentAt(now);
+            application.setEmailBody(emailBody);
+            application.setEmailSubject(subject);
+            application.setStatus(ApplicationStatus.APPLIED);
+            application.setAppliedAt(now);
+            application.setLastUpdatedAt(now);
+            jobApplicationRepository.save(application);
+            
+            // Mark job matches as viewed
+            List<JobMatch> jobMatches = jobMatchRepository.findByStudentIdAndJobId(studentProfile.getId(), jobId);
+            for (JobMatch match : jobMatches) {
+                match.setViewed(true);
+                jobMatchRepository.save(match);
+            }
+            
+            // Increment email count
+            tracking.incrementEmailCount();
+            emailTrackingRepository.save(tracking);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Application submitted and email sent successfully",
+                "emailsSentToday", tracking.getEmailCount(),
+                "emailsRemaining", 10 - tracking.getEmailCount()
+            ));
+        } catch (Exception e) {
+            // Email failed - no application is created
+            throw new BadRequestException("Failed to send email: " + e.getMessage());
+        }
+    }
+}
