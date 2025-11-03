@@ -1,13 +1,13 @@
 package com.ojtechapi.spring.jwtoauth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ojtechapi.spring.ojtech.OJTechApiApplication;
-import com.ojtechapi.spring.ojtech.entities.*;
-import com.ojtechapi.spring.ojtech.repositories.JobRepository;
-import com.ojtechapi.spring.ojtech.repositories.NLOProfileRepository;
-import com.ojtechapi.spring.ojtech.repositories.RoleRepository;
-import com.ojtechapi.spring.ojtech.repositories.UserRepository;
-import com.ojtechapi.spring.ojtech.security.services.UserDetailsImpl;
+import com.ojtechapi.spring.jwtoauth.OJTechApiApplication;
+import com.ojtechapi.spring.jwtoauth.entities.*;
+import com.ojtechapi.spring.jwtoauth.repositories.JobRepository;
+import com.ojtechapi.spring.jwtoauth.repositories.NLOProfileRepository;
+import com.ojtechapi.spring.jwtoauth.repositories.RoleRepository;
+import com.ojtechapi.spring.jwtoauth.repositories.UserRepository;
+import com.ojtechapi.spring.jwtoauth.security.services.UserDetailsImpl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
