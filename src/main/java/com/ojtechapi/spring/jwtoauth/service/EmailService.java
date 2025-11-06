@@ -171,7 +171,7 @@ public class EmailService {
                                     </table>
                                 </div>
                                 <div style="text-align: center; margin: 30px 0;">
-                                    <a href="%s" style="background-color:rgb(0, 0, 0); color: white; padding: 14px 28px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: 500;">Download CV/Resume</a>
+                                    <a href="%s" style="background-color:rgb(0, 0, 0); color: white; padding: 14px 28px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: 500;">View CV</a>
                                 </div>
                                 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; color: #999999; font-size: 12px; text-align: center;">
                                     <p style="margin: 0 0 8px;">This application was submitted through OJTech.</p>
